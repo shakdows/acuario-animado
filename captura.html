@@ -14,58 +14,52 @@
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
   html,body{height:100%;font-family:"Nunito",system-ui,sans-serif;color:var(--foam);overflow:hidden}
   body{background:linear-gradient(180deg,#1593b0 0%,#0a5a7a 40%,#04202d 100%);display:flex;flex-direction:column}
-  header{display:flex;align-items:center;gap:9px;padding:16px 20px}
+  header{display:flex;align-items:center;gap:9px;padding:14px 20px}
   header .dot{width:11px;height:11px;border-radius:50%;background:var(--biolum);box-shadow:0 0 12px var(--biolum)}
   header b{font-family:"Fredoka";font-weight:600;letter-spacing:.2em;font-size:13px}
   header span{font-family:"Fredoka";font-weight:500;font-size:13px;color:rgba(234,250,255,.55)}
 
-  .stage{flex:1;position:relative;margin:4px 16px 0;border-radius:24px;overflow:hidden;
+  .stage{flex:1;position:relative;margin:2px 14px 0;border-radius:22px;overflow:hidden;
     background:#021019;border:1px solid rgba(46,230,207,.25);display:flex;align-items:center;justify-content:center}
   video{width:100%;height:100%;object-fit:cover}
   .frameguide{position:absolute;inset:14px;border:2px dashed rgba(255,255,255,.35);border-radius:18px;pointer-events:none}
   .msg{position:absolute;padding:26px;text-align:center;font-size:15px;line-height:1.5;color:#dff7f4}
 
-  /* Revisión */
   .review{position:absolute;inset:0;display:none;flex-direction:column;background:#04202d}
   .review.show{display:flex}
-  .preview{flex:1;position:relative;display:flex;align-items:center;justify-content:center;
+  .preview{flex:1;min-height:140px;position:relative;display:flex;align-items:center;justify-content:center;
     background:radial-gradient(120% 100% at 50% 0%,rgba(46,230,207,.14),transparent 55%),linear-gradient(180deg,#0a5a7a,#063047)}
-  .preview canvas{max-width:86%;max-height:86%;filter:drop-shadow(0 8px 20px rgba(0,0,0,.5))}
-  .panel{padding:16px 18px 18px;background:rgba(3,22,32,.96);border-top:1px solid rgba(46,230,207,.2)}
-  .field{margin-bottom:12px}
-  .field label{display:flex;justify-content:space-between;font-family:"Fredoka";font-weight:500;font-size:13px;color:#cdeef0;margin-bottom:7px}
+  .preview canvas{max-width:84%;max-height:84%;filter:drop-shadow(0 8px 20px rgba(0,0,0,.5))}
+  .working{position:absolute;font-family:"Fredoka";font-size:14px;color:#cdeef0;display:none}
+  .panel{padding:12px 16px 14px;background:rgba(3,22,32,.97);border-top:1px solid rgba(46,230,207,.2);max-height:48vh;overflow-y:auto}
+  .field{margin-bottom:10px}
+  .field label{display:flex;justify-content:space-between;font-family:"Fredoka";font-weight:500;font-size:13px;color:#cdeef0;margin-bottom:6px}
   .field label span{color:var(--biolum)}
-  .field input[type=text]{width:100%;padding:13px 15px;border-radius:13px;border:1px solid rgba(255,255,255,.16);
-    background:rgba(255,255,255,.07);color:#fff;font-family:"Fredoka";font-weight:500;font-size:16px;outline:none}
+  .field input[type=text]{width:100%;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.07);color:#fff;font-family:"Fredoka";font-weight:500;font-size:16px;outline:none}
   .field input[type=text]:focus{border-color:var(--biolum)}
   input[type=range]{width:100%;-webkit-appearance:none;height:6px;border-radius:6px;background:linear-gradient(90deg,var(--biolum),rgba(255,255,255,.12));outline:none}
   input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 0 0 4px rgba(46,230,207,.3)}
-  .row{display:flex;gap:10px;margin-top:4px}
   .rotrow{display:flex;align-items:center;gap:10px}
-  .rotbtn{width:48px;height:42px;border-radius:11px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.08);color:#dff7f4;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .rotbtn{width:48px;height:40px;border-radius:11px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.08);color:#dff7f4;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center}
   .rotbtn:active{transform:scale(.94)}
   .rothint{font-size:11.5px;color:rgba(234,250,255,.5);font-family:"Fredoka";line-height:1.3}
-  .btn{flex:1;font-family:"Fredoka";font-weight:600;font-size:16px;border:none;cursor:pointer;padding:15px;border-radius:15px;
-    background:linear-gradient(135deg,#3df0d8,#1bbfae);color:#04202b}
+  .row{display:flex;gap:10px;margin-top:6px}
+  .btn{flex:1;font-family:"Fredoka";font-weight:600;font-size:16px;border:none;cursor:pointer;padding:14px;border-radius:14px;background:linear-gradient(135deg,#3df0d8,#1bbfae);color:#04202b}
   .btn.ghost{background:rgba(255,255,255,.1);color:#dff7f4;border:1px solid rgba(255,255,255,.16);flex:.55}
 
-  /* Estado */
-  .status{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;
-    background:radial-gradient(120% 100% at 50% 30%,rgba(46,230,207,.18),transparent 55%),#04202d;padding:24px;text-align:center}
+  .status{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:radial-gradient(120% 100% at 50% 30%,rgba(46,230,207,.18),transparent 55%),#04202d;padding:24px;text-align:center}
   .status.show{display:flex}
-  .status img{max-width:60%;max-height:38%;filter:drop-shadow(0 10px 24px rgba(0,0,0,.5))}
+  .status img{max-width:55%;max-height:34%;filter:drop-shadow(0 10px 24px rgba(0,0,0,.5))}
   .status h2{font-family:"Fredoka";font-weight:600;font-size:22px}
   .status p{font-size:14px;color:rgba(234,250,255,.7)}
   .spinner{width:42px;height:42px;border-radius:50%;border:4px solid rgba(255,255,255,.15);border-top-color:var(--biolum);animation:spin .9s linear infinite}
   @keyframes spin{to{transform:rotate(360deg)}}
 
-  .dock{padding:16px 20px 28px;display:flex;flex-direction:column;align-items:center;gap:12px}
+  .dock{padding:14px 20px 24px;display:flex;flex-direction:column;align-items:center;gap:11px}
   .dock.hide{display:none}
-  .shoot{width:80px;height:80px;border-radius:50%;border:none;cursor:pointer;
-    background:linear-gradient(135deg,#3df0d8,#1bbfae);box-shadow:0 10px 30px rgba(46,230,207,.45), inset 0 2px 0 rgba(255,255,255,.4);
-    display:flex;align-items:center;justify-content:center;transition:transform .12s ease}
+  .shoot{width:78px;height:78px;border-radius:50%;border:none;cursor:pointer;background:linear-gradient(135deg,#3df0d8,#1bbfae);box-shadow:0 10px 30px rgba(46,230,207,.45), inset 0 2px 0 rgba(255,255,255,.4);display:flex;align-items:center;justify-content:center;transition:transform .12s ease}
   .shoot:active{transform:scale(.92)}
-  .shoot::after{content:"";width:62px;height:62px;border-radius:50%;border:3px solid rgba(4,32,45,.55)}
+  .shoot::after{content:"";width:60px;height:60px;border-radius:50%;border:3px solid rgba(4,32,45,.55)}
   .hint{font-family:"Fredoka";font-weight:500;font-size:14px;color:rgba(234,250,255,.7);text-align:center}
 </style>
 </head>
@@ -77,25 +71,28 @@
     <div class="frameguide" id="guide"></div>
     <div class="msg" id="msg" style="display:none"></div>
 
-    <!-- Revisión -->
     <div class="review" id="review">
-      <div class="preview"><canvas id="prev"></canvas></div>
+      <div class="preview"><canvas id="prev"></canvas><div class="working" id="working">Recortando…</div></div>
       <div class="panel">
         <div class="field">
           <label>Girar dibujo</label>
           <div class="rotrow">
-            <button class="rotbtn" id="rotL" aria-label="Girar a la izquierda">⟲</button>
-            <button class="rotbtn" id="rotR" aria-label="Girar a la derecha">⟳</button>
-            <span class="rothint">Si el dibujo salió de lado, enderézalo</span>
+            <button class="rotbtn" id="rotL" aria-label="Girar izquierda">⟲</button>
+            <button class="rotbtn" id="rotR" aria-label="Girar derecha">⟳</button>
+            <span class="rothint">Si salió de lado, enderézalo</span>
           </div>
         </div>
         <div class="field">
-          <label>Nombre del autor</label>
-          <input type="text" id="nombre" maxlength="16" placeholder="Ej: Mateo" autocomplete="off">
+          <label>Recorte de fondo <span id="cutVal">auto</span></label>
+          <input type="range" id="cut" min="35" max="130" value="65">
         </div>
         <div class="field">
           <label>Nitidez <span id="sharpVal">media</span></label>
           <input type="range" id="sharp" min="0" max="100" value="35">
+        </div>
+        <div class="field">
+          <label>Nombre del autor</label>
+          <input type="text" id="nombre" maxlength="16" placeholder="Ej: Mateo" autocomplete="off">
         </div>
         <div class="row">
           <button class="btn ghost" id="retake">Repetir</button>
@@ -104,7 +101,6 @@
       </div>
     </div>
 
-    <!-- Estado -->
     <div class="status" id="status"><div id="statusInner"></div></div>
   </div>
 
@@ -118,54 +114,55 @@ const cfg = window.ACUARIO_CONFIG || {};
 const ready = cfg.SUPABASE_URL && cfg.SUPABASE_ANON_KEY && cfg.SUPABASE_URL.indexOf('TU-')<0;
 const db = (ready && window.supabase) ? window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY) : null;
 
-const video=document.getElementById('video');
-const msg=document.getElementById('msg');
-const guide=document.getElementById('guide');
-const dock=document.getElementById('dock');
-const review=document.getElementById('review');
-const statusEl=document.getElementById('status');
-const statusInner=document.getElementById('statusInner');
-const prev=document.getElementById('prev');
-const sharpSlider=document.getElementById('sharp');
-const sharpVal=document.getElementById('sharpVal');
-let stream=null, baseCropped=null, finalCanvas=null;
+const video=document.getElementById('video'), msg=document.getElementById('msg'), guide=document.getElementById('guide');
+const dock=document.getElementById('dock'), review=document.getElementById('review');
+const statusEl=document.getElementById('status'), statusInner=document.getElementById('statusInner');
+const prev=document.getElementById('prev'), working=document.getElementById('working');
+const cutSlider=document.getElementById('cut'), cutVal=document.getElementById('cutVal');
+const sharpSlider=document.getElementById('sharp'), sharpVal=document.getElementById('sharpVal');
+let stream=null, rawResized=null, baseCropped=null, finalCanvas=null;
 
 async function startCam(){
-  try{
-    stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1600},height:{ideal:1200}}});
-    video.srcObject=stream;
-  }catch(e){
-    msg.style.display='block'; video.style.display='none'; guide.style.display='none';
-    msg.textContent='No se pudo abrir la cámara. Da permiso de cámara y recarga. (Necesita HTTPS.)';
-  }
+  try{ stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1600},height:{ideal:1200}}}); video.srcObject=stream; }
+  catch(e){ msg.style.display='block'; video.style.display='none'; guide.style.display='none'; msg.textContent='No se pudo abrir la cámara. Da permiso de cámara y recarga. (Necesita HTTPS.)'; }
 }
-if(!ready){ msg.style.display='block'; guide.style.display='none';
-  msg.innerHTML='Falta configurar Supabase en <b>config.js</b>.'; } else { startCam(); }
+if(!ready){ msg.style.display='block'; guide.style.display='none'; msg.innerHTML='Falta configurar Supabase en <b>config.js</b>.'; } else { startCam(); }
 
-/* ---------- Procesamiento de imagen ---------- */
+/* ============================================================
+   RECORTE DE FONDO EN DOS FASES (mesa -> papel)
+   ============================================================ */
 function resizeCanvas(imgOrCanvas, maxDim){
   const iw=imgOrCanvas.width||imgOrCanvas.videoWidth, ih=imgOrCanvas.height||imgOrCanvas.videoHeight;
   const s=Math.min(1,maxDim/Math.max(iw,ih)); const w=Math.round(iw*s), h=Math.round(ih*s);
   const c=document.createElement('canvas'); c.width=w; c.height=h; c.getContext('2d').drawImage(imgOrCanvas,0,0,w,h); return c;
 }
-function sampleBg(px,w,h){
-  const rs=[],gs=[],bs=[]; const step=Math.max(1,Math.round(Math.max(w,h)/120));
-  const push=i=>{const o=i*4;rs.push(px[o]);gs.push(px[o+1]);bs.push(px[o+2]);};
-  for(let x=0;x<w;x+=step){push(x);push((h-1)*w+x);} for(let y=0;y<h;y+=step){push(y*w);push(y*w+w-1);}
-  const med=a=>{a.sort((m,n)=>m-n);return a[a.length>>1];}; return [med(rs),med(gs),med(bs)];
+function median3(rs,gs,bs){ const m=a=>{a.sort((x,y)=>x-y);return a[a.length>>1];}; return [m(rs),m(gs),m(bs)]; }
+function sampleBorder(px,w,h){
+  const rs=[],gs=[],bs=[]; const step=Math.max(1,Math.round(Math.max(w,h)/130));
+  const p=i=>{const o=i*4;rs.push(px[o]);gs.push(px[o+1]);bs.push(px[o+2]);};
+  for(let x=0;x<w;x+=step){p(x);p((h-1)*w+x);} for(let y=0;y<h;y+=step){p(y*w);p(y*w+w-1);}
+  return median3(rs,gs,bs);
 }
-function cutout(src, tol){
-  const w=src.width,h=src.height; const ctx=src.getContext('2d');
-  const img=ctx.getImageData(0,0,w,h); const px=img.data; const N=w*h;
-  const [br,bg,bb]=sampleBg(px,w,h); const tol2=tol*tol*3; const vis=new Uint8Array(N);
-  const isBg=i=>{const o=i*4,r=px[o],g=px[o+1],b=px[o+2];
-    const dr=r-br,dg=g-bg,db2=b-bb; if((dr*dr+dg*dg+db2*db2)<=tol2) return true;
-    const lum=0.299*r+0.587*g+0.114*b; const sat=Math.max(r,g,b)-Math.min(r,g,b);
-    return lum>=188 && sat<=46;};  // papel: claro y poco saturado
-  const st=[]; for(let x=0;x<w;x++){st.push(x);st.push((h-1)*w+x);} for(let y=0;y<h;y++){st.push(y*w);st.push(y*w+w-1);}
-  while(st.length){const i=st.pop(); if(i<0||i>=N||vis[i])continue; vis[i]=1; if(!isBg(i))continue; px[i*4+3]=0;
-    const x=i%w,y=(i/w)|0; if(x>0)st.push(i-1); if(x<w-1)st.push(i+1); if(y>0)st.push(i-w); if(y<h-1)st.push(i+w);}
-  // limpieza: conserva solo los trozos grandes (el dibujo), descarta restos sueltos del fondo
+function sampleFrontier(px,w,h){
+  const rs=[],gs=[],bs=[];
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){ const i=y*w+x; if(px[i*4+3]===0)continue; let edge=false;
+    if(x>0&&px[(i-1)*4+3]===0)edge=true; else if(x<w-1&&px[(i+1)*4+3]===0)edge=true;
+    else if(y>0&&px[(i-w)*4+3]===0)edge=true; else if(y<h-1&&px[(i+w)*4+3]===0)edge=true;
+    if(edge){rs.push(px[i*4]);gs.push(px[i*4+1]);bs.push(px[i*4+2]);} }
+  if(!rs.length) return null; return median3(rs,gs,bs);
+}
+function floodBg(px,w,h,N,ref,tol2,seedBorder){
+  const vis=new Uint8Array(N); const st=[];
+  if(seedBorder){ for(let x=0;x<w;x++){st.push(x);st.push((h-1)*w+x);} for(let y=0;y<h;y++){st.push(y*w);st.push(y*w+w-1);} }
+  else { for(let i=0;i<N;i++) if(px[i*4+3]===0) st.push(i); }
+  const sim=i=>{const o=i*4,dr=px[o]-ref[0],dg=px[o+1]-ref[1],db=px[o+2]-ref[2];return (dr*dr+dg*dg+db*db)<=tol2;};
+  while(st.length){ const i=st.pop(); if(i<0||i>=N||vis[i])continue; vis[i]=1;
+    if(px[i*4+3]!==0){ if(!sim(i))continue; px[i*4+3]=0; }
+    const x=i%w,y=(i/w)|0;
+    if(x>0)st.push(i-1); if(x<w-1)st.push(i+1); if(y>0)st.push(i-w); if(y<h-1)st.push(i+w);
+  }
+}
+function cleanupComponents(px,w,h,N){
   const lab=new Int32Array(N).fill(-1); const sizes=[]; const sc=[];
   for(let i=0;i<N;i++){ if(px[i*4+3]>32 && lab[i]===-1){ const id=sizes.length; let cnt=0; sc.length=0; sc.push(i); lab[i]=id;
     while(sc.length){ const j=sc.pop(); cnt++; const x=j%w,y=(j/w)|0;
@@ -174,13 +171,16 @@ function cutout(src, tol){
       if(y>0&&px[(j-w)*4+3]>32&&lab[j-w]===-1){lab[j-w]=id;sc.push(j-w);}
       if(y<h-1&&px[(j+w)*4+3]>32&&lab[j+w]===-1){lab[j+w]=id;sc.push(j+w);} }
     sizes.push(cnt); } }
-  let maxS=0; for(const s of sizes) if(s>maxS)maxS=s;
-  const minKeep=maxS*0.12;
+  let maxS=0; for(const s of sizes) if(s>maxS)maxS=s; const minKeep=maxS*0.12;
   for(let i=0;i<N;i++){ const id=lab[i]; if(id>=0 && sizes[id]<minKeep) px[i*4+3]=0; }
+}
+function featherAlpha(px,w,h,N){
   const al=new Uint8ClampedArray(N); for(let i=0;i<N;i++)al[i]=px[i*4+3];
-  const ob=new Uint8ClampedArray(N);
-  for(let y=0;y<h;y++)for(let x=0;x<w;x++){let s=0,c=0;for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const nx=x+dx,ny=y+dy;if(nx<0||ny<0||nx>=w||ny>=h)continue;s+=al[ny*w+nx];c++;}ob[y*w+x]=s/c;}
-  for(let i=0;i<N;i++)px[i*4+3]=ob[i];
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){ let s=0,c=0;
+    for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const nx=x+dx,ny=y+dy;if(nx<0||ny<0||nx>=w||ny>=h)continue;s+=al[ny*w+nx];c++;}
+    px[(y*w+x)*4+3]=s/c; }
+}
+function cropToContent(img,px,w,h){
   let minX=w,minY=h,maxX=0,maxY=0,f=false;
   for(let y=0;y<h;y++)for(let x=0;x<w;x++){if(px[(y*w+x)*4+3]>14){f=true;if(x<minX)minX=x;if(x>maxX)maxX=x;if(y<minY)minY=y;if(y>maxY)maxY=y;}}
   if(!f){minX=0;minY=0;maxX=w-1;maxY=h-1;}
@@ -190,6 +190,19 @@ function cutout(src, tol){
   const o=document.createElement('canvas');o.width=cw;o.height=ch;o.getContext('2d').drawImage(tmp,minX,minY,cw,ch,0,0,cw,ch);
   return o;
 }
+function cutout(src, tol){
+  const w=src.width,h=src.height; const ctx=src.getContext('2d');
+  const img=ctx.getImageData(0,0,w,h); const px=img.data; const N=w*h; const tol2=tol*tol*3;
+  // FASE 1: pela el color del borde (mesa / superficie)
+  floodBg(px,w,h,N, sampleBorder(px,w,h), tol2, true);
+  // FASE 2: re-detecta la frontera (papel) y la pela, solo si es clara/desaturada
+  const bg2=sampleFrontier(px,w,h);
+  if(bg2){ const lum=0.299*bg2[0]+0.587*bg2[1]+0.114*bg2[2]; const sat=Math.max(bg2[0],bg2[1],bg2[2])-Math.min(bg2[0],bg2[1],bg2[2]);
+    if(lum>=120 && sat<=55) floodBg(px,w,h,N, bg2, tol2*1.7, false); }
+  cleanupComponents(px,w,h,N);
+  featherAlpha(px,w,h,N);
+  return cropToContent(img,px,w,h);
+}
 function sharpen(src, amount){
   if(amount<=0.01){ const c=document.createElement('canvas');c.width=src.width;c.height=src.height;c.getContext('2d').drawImage(src,0,0);return c; }
   const w=src.width,h=src.height; const img=src.getContext('2d').getImageData(0,0,w,h); const s=img.data; const out=new Uint8ClampedArray(s);
@@ -198,53 +211,56 @@ function sharpen(src, amount){
     for(let c=0;c<3;c++){const idx=i+c; out[idx]=center*s[idx]-k*s[idx-4]-k*s[idx+4]-k*s[idx-w*4]-k*s[idx+w*4];}}
   const o=document.createElement('canvas');o.width=w;o.height=h;o.getContext('2d').putImageData(new ImageData(out,w,h),0,0);return o;
 }
+function rotate90(src, cw){
+  const w=src.width,h=src.height; const o=document.createElement('canvas'); o.width=h; o.height=w; const ctx=o.getContext('2d');
+  if(cw){ctx.translate(h,0);ctx.rotate(Math.PI/2);}else{ctx.translate(0,w);ctx.rotate(-Math.PI/2);} ctx.drawImage(src,0,0); return o;
+}
 
+/* ---------- Render ---------- */
+function recompute(){
+  if(!rawResized) return;
+  working.style.display='block';
+  setTimeout(()=>{   // deja pintar el "Recortando…"
+    baseCropped=cutout(rawResized, parseInt(cutSlider.value,10));
+    working.style.display='none';
+    renderReview();
+  }, 16);
+}
 function renderReview(){
   if(!baseCropped) return;
-  const amount=(parseInt(sharpSlider.value,10)/100)*1.8;   // 0 .. 1.8
+  const amount=(parseInt(sharpSlider.value,10)/100)*1.8;
   finalCanvas=sharpen(baseCropped, amount);
-  const ctx=prev.getContext('2d');
   prev.width=finalCanvas.width; prev.height=finalCanvas.height;
-  ctx.clearRect(0,0,prev.width,prev.height); ctx.drawImage(finalCanvas,0,0);
-  const v=parseInt(sharpSlider.value,10);
-  sharpVal.textContent = v<20?'suave' : v<55?'media' : v<80?'nítida' : 'máxima';
+  const ctx=prev.getContext('2d'); ctx.clearRect(0,0,prev.width,prev.height); ctx.drawImage(finalCanvas,0,0);
+  const v=parseInt(sharpSlider.value,10); sharpVal.textContent = v<20?'suave':v<55?'media':v<80?'nítida':'máxima';
+  const cv=parseInt(cutSlider.value,10); cutVal.textContent = cv<55?'suave':cv<95?'auto':'fuerte';
 }
 sharpSlider.addEventListener('input', renderReview);
-
-function rotate90(src, cw){
-  const w=src.width,h=src.height; const o=document.createElement('canvas'); o.width=h; o.height=w;
-  const ctx=o.getContext('2d');
-  if(cw){ ctx.translate(h,0); ctx.rotate(Math.PI/2); } else { ctx.translate(0,w); ctx.rotate(-Math.PI/2); }
-  ctx.drawImage(src,0,0); return o;
-}
-document.getElementById('rotL').onclick=()=>{ if(baseCropped){ baseCropped=rotate90(baseCropped,false); renderReview(); } };
-document.getElementById('rotR').onclick=()=>{ if(baseCropped){ baseCropped=rotate90(baseCropped,true); renderReview(); } };
+cutSlider.addEventListener('change', recompute);
+document.getElementById('rotL').onclick=()=>{ if(rawResized){ rawResized=rotate90(rawResized,false); recompute(); } };
+document.getElementById('rotR').onclick=()=>{ if(rawResized){ rawResized=rotate90(rawResized,true); recompute(); } };
 
 /* ---------- Tomar foto ---------- */
 document.getElementById('shoot').onclick=()=>{
   if(!stream || !db) return;
   const cap=document.createElement('canvas'); cap.width=video.videoWidth; cap.height=video.videoHeight;
   cap.getContext('2d').drawImage(video,0,0);
-  const resized=resizeCanvas(cap, 1000);
-  baseCropped=cutout(resized, 70);
-  renderReview();
+  rawResized=resizeCanvas(cap, 900);
   dock.classList.add('hide'); review.classList.add('show');
+  recompute();
 };
-
 document.getElementById('retake').onclick=()=>{ review.classList.remove('show'); dock.classList.remove('hide'); };
 
-document.getElementById('send').onclick=async ()=>{
+document.getElementById('send').onclick=()=>{
   if(!finalCanvas || !db) return;
   const nombre=document.getElementById('nombre').value.trim();
   review.classList.remove('show'); showStatus('sending', finalCanvas.toDataURL('image/png'));
   finalCanvas.toBlob(async (blob)=>{
     try{
       const name=Date.now()+'-'+Math.random().toString(36).slice(2,8)+'.png';
-      const up=await db.storage.from('dibujos').upload(name, blob, {contentType:'image/png'});
-      if(up.error) throw up.error;
+      const up=await db.storage.from('dibujos').upload(name, blob, {contentType:'image/png'}); if(up.error) throw up.error;
       const pub=db.storage.from('dibujos').getPublicUrl(name).data.publicUrl;
-      const ins=await db.from('dibujos').insert({image_url:pub, nombre:nombre||null});
-      if(ins.error) throw ins.error;
+      const ins=await db.from('dibujos').insert({image_url:pub, nombre:nombre||null}); if(ins.error) throw ins.error;
       showStatus('done', finalCanvas.toDataURL('image/png'), nombre);
     }catch(err){ console.error(err); showStatus('error','', err.message||''); }
   }, 'image/png');
@@ -252,18 +268,11 @@ document.getElementById('send').onclick=async ()=>{
 
 function showStatus(state, dataUrl, extra){
   statusEl.classList.add('show');
-  if(state==='sending'){
-    statusInner.innerHTML='<div class="spinner"></div><h2>Enviando al océano…</h2><p>Un momentito</p>';
-  }else if(state==='done'){
-    statusInner.innerHTML='<img src="'+dataUrl+'"><h2>¡Listo'+(extra?(', '+extra):'')+'! 🐠</h2><p>Tu dibujo ya está nadando. Mira la pantalla grande.</p><button class="btn" id="again" style="max-width:220px">Tomar otro</button>';
-    document.getElementById('again').onclick=reset;
-  }else{
-    statusInner.innerHTML='<h2>Uy, no se pudo enviar</h2><p>'+(extra||'Revisa la conexión e inténtalo de nuevo')+'</p><button class="btn ghost" id="again" style="max-width:220px;flex:none">Reintentar</button>';
-    document.getElementById('again').onclick=()=>{ statusEl.classList.remove('show'); review.classList.add('show'); };
-  }
+  if(state==='sending'){ statusInner.innerHTML='<div class="spinner"></div><h2>Enviando al océano…</h2><p>Un momentito</p>'; }
+  else if(state==='done'){ statusInner.innerHTML='<img src="'+dataUrl+'"><h2>¡Listo'+(extra?(', '+extra):'')+'! 🐠</h2><p>Tu dibujo ya está nadando. Mira la pantalla grande.</p><button class="btn" id="again" style="max-width:220px">Tomar otro</button>'; document.getElementById('again').onclick=reset; }
+  else { statusInner.innerHTML='<h2>Uy, no se pudo enviar</h2><p>'+(extra||'Revisa la conexión e inténtalo de nuevo')+'</p><button class="btn ghost" id="again" style="max-width:220px;flex:none">Reintentar</button>'; document.getElementById('again').onclick=()=>{ statusEl.classList.remove('show'); review.classList.add('show'); }; }
 }
-function reset(){ statusEl.classList.remove('show'); dock.classList.remove('hide');
-  document.getElementById('nombre').value=''; sharpSlider.value=35; baseCropped=null; finalCanvas=null; }
+function reset(){ statusEl.classList.remove('show'); dock.classList.remove('hide'); document.getElementById('nombre').value=''; sharpSlider.value=35; cutSlider.value=65; rawResized=null; baseCropped=null; finalCanvas=null; }
 </script>
 </body>
 </html>
