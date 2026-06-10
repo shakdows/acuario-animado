@@ -150,6 +150,18 @@ function cutout(src, tol){
   const st=[]; for(let x=0;x<w;x++){st.push(x);st.push((h-1)*w+x);} for(let y=0;y<h;y++){st.push(y*w);st.push(y*w+w-1);}
   while(st.length){const i=st.pop(); if(i<0||i>=N||vis[i])continue; vis[i]=1; if(!isBg(i))continue; px[i*4+3]=0;
     const x=i%w,y=(i/w)|0; if(x>0)st.push(i-1); if(x<w-1)st.push(i+1); if(y>0)st.push(i-w); if(y<h-1)st.push(i+w);}
+  // limpieza: conserva solo los trozos grandes (el dibujo), descarta restos sueltos del fondo
+  const lab=new Int32Array(N).fill(-1); const sizes=[]; const sc=[];
+  for(let i=0;i<N;i++){ if(px[i*4+3]>32 && lab[i]===-1){ const id=sizes.length; let cnt=0; sc.length=0; sc.push(i); lab[i]=id;
+    while(sc.length){ const j=sc.pop(); cnt++; const x=j%w,y=(j/w)|0;
+      if(x>0&&px[(j-1)*4+3]>32&&lab[j-1]===-1){lab[j-1]=id;sc.push(j-1);}
+      if(x<w-1&&px[(j+1)*4+3]>32&&lab[j+1]===-1){lab[j+1]=id;sc.push(j+1);}
+      if(y>0&&px[(j-w)*4+3]>32&&lab[j-w]===-1){lab[j-w]=id;sc.push(j-w);}
+      if(y<h-1&&px[(j+w)*4+3]>32&&lab[j+w]===-1){lab[j+w]=id;sc.push(j+w);} }
+    sizes.push(cnt); } }
+  let maxS=0; for(const s of sizes) if(s>maxS)maxS=s;
+  const minKeep=maxS*0.12;
+  for(let i=0;i<N;i++){ const id=lab[i]; if(id>=0 && sizes[id]<minKeep) px[i*4+3]=0; }
   const al=new Uint8ClampedArray(N); for(let i=0;i<N;i++)al[i]=px[i*4+3];
   const ob=new Uint8ClampedArray(N);
   for(let y=0;y<h;y++)for(let x=0;x<w;x++){let s=0,c=0;for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const nx=x+dx,ny=y+dy;if(nx<0||ny<0||nx>=w||ny>=h)continue;s+=al[ny*w+nx];c++;}ob[y*w+x]=s/c;}
