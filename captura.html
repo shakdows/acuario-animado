@@ -14,36 +14,55 @@
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
   html,body{height:100%;font-family:"Nunito",system-ui,sans-serif;color:var(--foam);overflow:hidden}
   body{background:linear-gradient(180deg,#1593b0 0%,#0a5a7a 40%,#04202d 100%);display:flex;flex-direction:column}
-  header{display:flex;align-items:center;gap:9px;padding:18px 20px}
+  header{display:flex;align-items:center;gap:9px;padding:16px 20px}
   header .dot{width:11px;height:11px;border-radius:50%;background:var(--biolum);box-shadow:0 0 12px var(--biolum)}
   header b{font-family:"Fredoka";font-weight:600;letter-spacing:.2em;font-size:13px}
   header span{font-family:"Fredoka";font-weight:500;font-size:13px;color:rgba(234,250,255,.55)}
 
-  .stage{flex:1;position:relative;margin:6px 16px 0;border-radius:24px;overflow:hidden;
+  .stage{flex:1;position:relative;margin:4px 16px 0;border-radius:24px;overflow:hidden;
     background:#021019;border:1px solid rgba(46,230,207,.25);display:flex;align-items:center;justify-content:center}
   video{width:100%;height:100%;object-fit:cover}
   .frameguide{position:absolute;inset:14px;border:2px dashed rgba(255,255,255,.35);border-radius:18px;pointer-events:none}
   .msg{position:absolute;padding:26px;text-align:center;font-size:15px;line-height:1.5;color:#dff7f4}
 
-  .result{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:18px;
+  /* Revisión */
+  .review{position:absolute;inset:0;display:none;flex-direction:column;background:#04202d}
+  .review.show{display:flex}
+  .preview{flex:1;position:relative;display:flex;align-items:center;justify-content:center;
+    background:radial-gradient(120% 100% at 50% 0%,rgba(46,230,207,.14),transparent 55%),linear-gradient(180deg,#0a5a7a,#063047)}
+  .preview canvas{max-width:86%;max-height:86%;filter:drop-shadow(0 8px 20px rgba(0,0,0,.5))}
+  .panel{padding:16px 18px 18px;background:rgba(3,22,32,.96);border-top:1px solid rgba(46,230,207,.2)}
+  .field{margin-bottom:12px}
+  .field label{display:flex;justify-content:space-between;font-family:"Fredoka";font-weight:500;font-size:13px;color:#cdeef0;margin-bottom:7px}
+  .field label span{color:var(--biolum)}
+  .field input[type=text]{width:100%;padding:13px 15px;border-radius:13px;border:1px solid rgba(255,255,255,.16);
+    background:rgba(255,255,255,.07);color:#fff;font-family:"Fredoka";font-weight:500;font-size:16px;outline:none}
+  .field input[type=text]:focus{border-color:var(--biolum)}
+  input[type=range]{width:100%;-webkit-appearance:none;height:6px;border-radius:6px;background:linear-gradient(90deg,var(--biolum),rgba(255,255,255,.12));outline:none}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 0 0 4px rgba(46,230,207,.3)}
+  .row{display:flex;gap:10px;margin-top:4px}
+  .btn{flex:1;font-family:"Fredoka";font-weight:600;font-size:16px;border:none;cursor:pointer;padding:15px;border-radius:15px;
+    background:linear-gradient(135deg,#3df0d8,#1bbfae);color:#04202b}
+  .btn.ghost{background:rgba(255,255,255,.1);color:#dff7f4;border:1px solid rgba(255,255,255,.16);flex:.55}
+
+  /* Estado */
+  .status{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;
     background:radial-gradient(120% 100% at 50% 30%,rgba(46,230,207,.18),transparent 55%),#04202d;padding:24px;text-align:center}
-  .result.show{display:flex}
-  .result img{max-width:70%;max-height:42%;filter:drop-shadow(0 10px 24px rgba(0,0,0,.5))}
-  .result h2{font-family:"Fredoka";font-weight:600;font-size:22px}
-  .result p{font-size:14px;color:rgba(234,250,255,.7)}
+  .status.show{display:flex}
+  .status img{max-width:60%;max-height:38%;filter:drop-shadow(0 10px 24px rgba(0,0,0,.5))}
+  .status h2{font-family:"Fredoka";font-weight:600;font-size:22px}
+  .status p{font-size:14px;color:rgba(234,250,255,.7)}
   .spinner{width:42px;height:42px;border-radius:50%;border:4px solid rgba(255,255,255,.15);border-top-color:var(--biolum);animation:spin .9s linear infinite}
   @keyframes spin{to{transform:rotate(360deg)}}
 
-  .dock{padding:18px 20px 30px;display:flex;flex-direction:column;align-items:center;gap:14px}
-  .shoot{width:84px;height:84px;border-radius:50%;border:none;cursor:pointer;
+  .dock{padding:16px 20px 28px;display:flex;flex-direction:column;align-items:center;gap:12px}
+  .dock.hide{display:none}
+  .shoot{width:80px;height:80px;border-radius:50%;border:none;cursor:pointer;
     background:linear-gradient(135deg,#3df0d8,#1bbfae);box-shadow:0 10px 30px rgba(46,230,207,.45), inset 0 2px 0 rgba(255,255,255,.4);
     display:flex;align-items:center;justify-content:center;transition:transform .12s ease}
   .shoot:active{transform:scale(.92)}
-  .shoot::after{content:"";width:64px;height:64px;border-radius:50%;border:3px solid rgba(4,32,45,.55)}
+  .shoot::after{content:"";width:62px;height:62px;border-radius:50%;border:3px solid rgba(4,32,45,.55)}
   .hint{font-family:"Fredoka";font-weight:500;font-size:14px;color:rgba(234,250,255,.7);text-align:center}
-  .btn{font-family:"Fredoka";font-weight:600;font-size:16px;border:none;cursor:pointer;padding:15px 30px;border-radius:16px;
-    background:linear-gradient(135deg,#3df0d8,#1bbfae);color:#04202b}
-  .btn.ghost{background:rgba(255,255,255,.1);color:#dff7f4;border:1px solid rgba(255,255,255,.16)}
 </style>
 </head>
 <body>
@@ -54,9 +73,27 @@
     <div class="frameguide" id="guide"></div>
     <div class="msg" id="msg" style="display:none"></div>
 
-    <div class="result" id="result">
-      <div id="resultInner"></div>
+    <!-- Revisión -->
+    <div class="review" id="review">
+      <div class="preview"><canvas id="prev"></canvas></div>
+      <div class="panel">
+        <div class="field">
+          <label>Nombre del autor</label>
+          <input type="text" id="nombre" maxlength="16" placeholder="Ej: Mateo" autocomplete="off">
+        </div>
+        <div class="field">
+          <label>Nitidez <span id="sharpVal">media</span></label>
+          <input type="range" id="sharp" min="0" max="100" value="35">
+        </div>
+        <div class="row">
+          <button class="btn ghost" id="retake">Repetir</button>
+          <button class="btn" id="send">Enviar al mar</button>
+        </div>
+      </div>
     </div>
+
+    <!-- Estado -->
+    <div class="status" id="status"><div id="statusInner"></div></div>
   </div>
 
   <div class="dock" id="dock">
@@ -71,70 +108,126 @@ const db = (ready && window.supabase) ? window.supabase.createClient(cfg.SUPABAS
 
 const video=document.getElementById('video');
 const msg=document.getElementById('msg');
-const result=document.getElementById('result');
-const resultInner=document.getElementById('resultInner');
+const guide=document.getElementById('guide');
 const dock=document.getElementById('dock');
-let stream=null;
+const review=document.getElementById('review');
+const statusEl=document.getElementById('status');
+const statusInner=document.getElementById('statusInner');
+const prev=document.getElementById('prev');
+const sharpSlider=document.getElementById('sharp');
+const sharpVal=document.getElementById('sharpVal');
+let stream=null, baseCropped=null, finalCanvas=null;
 
 async function startCam(){
   try{
     stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1600},height:{ideal:1200}}});
     video.srcObject=stream;
   }catch(e){
-    msg.style.display='block';
-    msg.textContent='No se pudo abrir la cámara. Da permiso de cámara y recarga. (Necesita conexión segura HTTPS.)';
-    video.style.display='none';
+    msg.style.display='block'; video.style.display='none'; guide.style.display='none';
+    msg.textContent='No se pudo abrir la cámara. Da permiso de cámara y recarga. (Necesita HTTPS.)';
   }
 }
-if(!ready){
-  msg.style.display='block';
-  msg.innerHTML='Falta configurar Supabase en <b>config.js</b>.<br>Pega tu URL y ANON KEY.';
-} else { startCam(); }
+if(!ready){ msg.style.display='block'; guide.style.display='none';
+  msg.innerHTML='Falta configurar Supabase en <b>config.js</b>.'; } else { startCam(); }
 
-function resizeToBlob(srcCanvas, maxDim, cb){
-  const iw=srcCanvas.width, ih=srcCanvas.height;
-  const scale=Math.min(1, maxDim/Math.max(iw,ih));
-  const w=Math.round(iw*scale), h=Math.round(ih*scale);
-  const c=document.createElement('canvas'); c.width=w; c.height=h;
-  c.getContext('2d').drawImage(srcCanvas,0,0,w,h);
-  c.toBlob(b=>cb(b,c.toDataURL('image/jpeg',.85)), 'image/jpeg', .85);
+/* ---------- Procesamiento de imagen ---------- */
+function resizeCanvas(imgOrCanvas, maxDim){
+  const iw=imgOrCanvas.width||imgOrCanvas.videoWidth, ih=imgOrCanvas.height||imgOrCanvas.videoHeight;
+  const s=Math.min(1,maxDim/Math.max(iw,ih)); const w=Math.round(iw*s), h=Math.round(ih*s);
+  const c=document.createElement('canvas'); c.width=w; c.height=h; c.getContext('2d').drawImage(imgOrCanvas,0,0,w,h); return c;
+}
+function sampleBg(px,w,h){
+  const rs=[],gs=[],bs=[]; const step=Math.max(1,Math.round(Math.max(w,h)/120));
+  const push=i=>{const o=i*4;rs.push(px[o]);gs.push(px[o+1]);bs.push(px[o+2]);};
+  for(let x=0;x<w;x+=step){push(x);push((h-1)*w+x);} for(let y=0;y<h;y+=step){push(y*w);push(y*w+w-1);}
+  const med=a=>{a.sort((m,n)=>m-n);return a[a.length>>1];}; return [med(rs),med(gs),med(bs)];
+}
+function cutout(src, tol){
+  const w=src.width,h=src.height; const ctx=src.getContext('2d');
+  const img=ctx.getImageData(0,0,w,h); const px=img.data; const N=w*h;
+  const [br,bg,bb]=sampleBg(px,w,h); const tol2=tol*tol*3; const vis=new Uint8Array(N);
+  const isBg=i=>{const o=i*4,dr=px[o]-br,dg=px[o+1]-bg,db2=px[o+2]-bb;return (dr*dr+dg*dg+db2*db2)<=tol2;};
+  const st=[]; for(let x=0;x<w;x++){st.push(x);st.push((h-1)*w+x);} for(let y=0;y<h;y++){st.push(y*w);st.push(y*w+w-1);}
+  while(st.length){const i=st.pop(); if(i<0||i>=N||vis[i])continue; vis[i]=1; if(!isBg(i))continue; px[i*4+3]=0;
+    const x=i%w,y=(i/w)|0; if(x>0)st.push(i-1); if(x<w-1)st.push(i+1); if(y>0)st.push(i-w); if(y<h-1)st.push(i+w);}
+  const al=new Uint8ClampedArray(N); for(let i=0;i<N;i++)al[i]=px[i*4+3];
+  const ob=new Uint8ClampedArray(N);
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){let s=0,c=0;for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const nx=x+dx,ny=y+dy;if(nx<0||ny<0||nx>=w||ny>=h)continue;s+=al[ny*w+nx];c++;}ob[y*w+x]=s/c;}
+  for(let i=0;i<N;i++)px[i*4+3]=ob[i];
+  let minX=w,minY=h,maxX=0,maxY=0,f=false;
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){if(px[(y*w+x)*4+3]>14){f=true;if(x<minX)minX=x;if(x>maxX)maxX=x;if(y<minY)minY=y;if(y>maxY)maxY=y;}}
+  if(!f){minX=0;minY=0;maxX=w-1;maxY=h-1;}
+  const pad=6; minX=Math.max(0,minX-pad);minY=Math.max(0,minY-pad);maxX=Math.min(w-1,maxX+pad);maxY=Math.min(h-1,maxY+pad);
+  const cw=maxX-minX+1,ch=maxY-minY+1;
+  const tmp=document.createElement('canvas');tmp.width=w;tmp.height=h;tmp.getContext('2d').putImageData(img,0,0);
+  const o=document.createElement('canvas');o.width=cw;o.height=ch;o.getContext('2d').drawImage(tmp,minX,minY,cw,ch,0,0,cw,ch);
+  return o;
+}
+function sharpen(src, amount){
+  if(amount<=0.01){ const c=document.createElement('canvas');c.width=src.width;c.height=src.height;c.getContext('2d').drawImage(src,0,0);return c; }
+  const w=src.width,h=src.height; const img=src.getContext('2d').getImageData(0,0,w,h); const s=img.data; const out=new Uint8ClampedArray(s);
+  const k=amount, center=1+4*k;
+  for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){const i=(y*w+x)*4; if(s[i+3]===0)continue;
+    for(let c=0;c<3;c++){const idx=i+c; out[idx]=center*s[idx]-k*s[idx-4]-k*s[idx+4]-k*s[idx-w*4]-k*s[idx+w*4];}}
+  const o=document.createElement('canvas');o.width=w;o.height=h;o.getContext('2d').putImageData(new ImageData(out,w,h),0,0);return o;
 }
 
+function renderReview(){
+  if(!baseCropped) return;
+  const amount=(parseInt(sharpSlider.value,10)/100)*1.2;   // 0 .. 1.2
+  finalCanvas=sharpen(baseCropped, amount);
+  const ctx=prev.getContext('2d');
+  prev.width=finalCanvas.width; prev.height=finalCanvas.height;
+  ctx.clearRect(0,0,prev.width,prev.height); ctx.drawImage(finalCanvas,0,0);
+  const v=parseInt(sharpSlider.value,10);
+  sharpVal.textContent = v<20?'suave' : v<55?'media' : v<80?'nítida' : 'máxima';
+}
+sharpSlider.addEventListener('input', renderReview);
+
+/* ---------- Tomar foto ---------- */
 document.getElementById('shoot').onclick=()=>{
   if(!stream || !db) return;
-  const cap=document.createElement('canvas');
-  cap.width=video.videoWidth; cap.height=video.videoHeight;
-  const ctx=cap.getContext('2d');
-  ctx.drawImage(video,0,0);
-  resizeToBlob(cap, 1200, async (blob, dataUrl)=>{
-    showState('sending', dataUrl);
-    try{
-      const name=Date.now()+'-'+Math.random().toString(36).slice(2,8)+'.jpg';
-      const up=await db.storage.from('dibujos').upload(name, blob, {contentType:'image/jpeg'});
-      if(up.error) throw up.error;
-      const pub=db.storage.from('dibujos').getPublicUrl(name).data.publicUrl;
-      const ins=await db.from('dibujos').insert({image_url:pub});
-      if(ins.error) throw ins.error;
-      showState('done', dataUrl);
-    }catch(err){
-      console.error(err); showState('error', dataUrl, err.message||'');
-    }
-  });
+  const cap=document.createElement('canvas'); cap.width=video.videoWidth; cap.height=video.videoHeight;
+  cap.getContext('2d').drawImage(video,0,0);
+  const resized=resizeCanvas(cap, 1000);
+  baseCropped=cutout(resized, 70);
+  renderReview();
+  dock.classList.add('hide'); review.classList.add('show');
 };
 
-function showState(state, dataUrl, errText){
-  dock.style.display='none'; result.classList.add('show');
+document.getElementById('retake').onclick=()=>{ review.classList.remove('show'); dock.classList.remove('hide'); };
+
+document.getElementById('send').onclick=async ()=>{
+  if(!finalCanvas || !db) return;
+  const nombre=document.getElementById('nombre').value.trim();
+  review.classList.remove('show'); showStatus('sending', finalCanvas.toDataURL('image/png'));
+  finalCanvas.toBlob(async (blob)=>{
+    try{
+      const name=Date.now()+'-'+Math.random().toString(36).slice(2,8)+'.png';
+      const up=await db.storage.from('dibujos').upload(name, blob, {contentType:'image/png'});
+      if(up.error) throw up.error;
+      const pub=db.storage.from('dibujos').getPublicUrl(name).data.publicUrl;
+      const ins=await db.from('dibujos').insert({image_url:pub, nombre:nombre||null});
+      if(ins.error) throw ins.error;
+      showStatus('done', finalCanvas.toDataURL('image/png'), nombre);
+    }catch(err){ console.error(err); showStatus('error','', err.message||''); }
+  }, 'image/png');
+};
+
+function showStatus(state, dataUrl, extra){
+  statusEl.classList.add('show');
   if(state==='sending'){
-    resultInner.innerHTML='<div class="spinner"></div><h2>Enviando al océano…</h2><p>Un momentito</p>';
-  } else if(state==='done'){
-    resultInner.innerHTML='<img src="'+dataUrl+'"><h2>¡Listo! Tu dibujo está nadando 🐠</h2><p>Mira la pantalla grande</p><button class="btn" id="again">Tomar otro</button>';
+    statusInner.innerHTML='<div class="spinner"></div><h2>Enviando al océano…</h2><p>Un momentito</p>';
+  }else if(state==='done'){
+    statusInner.innerHTML='<img src="'+dataUrl+'"><h2>¡Listo'+(extra?(', '+extra):'')+'! 🐠</h2><p>Tu dibujo ya está nadando. Mira la pantalla grande.</p><button class="btn" id="again" style="max-width:220px">Tomar otro</button>';
     document.getElementById('again').onclick=reset;
-  } else {
-    resultInner.innerHTML='<h2>Uy, no se pudo enviar</h2><p>'+(errText||'Revisa la conexión e inténtalo de nuevo')+'</p><button class="btn ghost" id="again">Reintentar</button>';
-    document.getElementById('again').onclick=reset;
+  }else{
+    statusInner.innerHTML='<h2>Uy, no se pudo enviar</h2><p>'+(extra||'Revisa la conexión e inténtalo de nuevo')+'</p><button class="btn ghost" id="again" style="max-width:220px;flex:none">Reintentar</button>';
+    document.getElementById('again').onclick=()=>{ statusEl.classList.remove('show'); review.classList.add('show'); };
   }
 }
-function reset(){ result.classList.remove('show'); dock.style.display='flex'; }
+function reset(){ statusEl.classList.remove('show'); dock.classList.remove('hide');
+  document.getElementById('nombre').value=''; sharpSlider.value=35; baseCropped=null; finalCanvas=null; }
 </script>
 </body>
 </html>
