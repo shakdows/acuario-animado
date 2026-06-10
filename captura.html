@@ -158,7 +158,10 @@ function cutout(src, tol){
   const w=src.width,h=src.height; const ctx=src.getContext('2d');
   const img=ctx.getImageData(0,0,w,h); const px=img.data; const N=w*h;
   const [br,bg,bb]=sampleBg(px,w,h); const tol2=tol*tol*3; const vis=new Uint8Array(N);
-  const isBg=i=>{const o=i*4,dr=px[o]-br,dg=px[o+1]-bg,db2=px[o+2]-bb;return (dr*dr+dg*dg+db2*db2)<=tol2;};
+  const isBg=i=>{const o=i*4,r=px[o],g=px[o+1],b=px[o+2];
+    const dr=r-br,dg=g-bg,db2=b-bb; if((dr*dr+dg*dg+db2*db2)<=tol2) return true;
+    const lum=0.299*r+0.587*g+0.114*b; const sat=Math.max(r,g,b)-Math.min(r,g,b);
+    return lum>=188 && sat<=46;};  // papel: claro y poco saturado
   const st=[]; for(let x=0;x<w;x++){st.push(x);st.push((h-1)*w+x);} for(let y=0;y<h;y++){st.push(y*w);st.push(y*w+w-1);}
   while(st.length){const i=st.pop(); if(i<0||i>=N||vis[i])continue; vis[i]=1; if(!isBg(i))continue; px[i*4+3]=0;
     const x=i%w,y=(i/w)|0; if(x>0)st.push(i-1); if(x<w-1)st.push(i+1); if(y>0)st.push(i-w); if(y<h-1)st.push(i+w);}
@@ -198,7 +201,7 @@ function sharpen(src, amount){
 
 function renderReview(){
   if(!baseCropped) return;
-  const amount=(parseInt(sharpSlider.value,10)/100)*1.2;   // 0 .. 1.2
+  const amount=(parseInt(sharpSlider.value,10)/100)*1.8;   // 0 .. 1.8
   finalCanvas=sharpen(baseCropped, amount);
   const ctx=prev.getContext('2d');
   prev.width=finalCanvas.width; prev.height=finalCanvas.height;
