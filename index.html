@@ -279,6 +279,11 @@ class Creature{
     this.turnTimer=200+Math.random()*400;
     this.spawnT=0; this.cont.alpha=0;
     creatureLayer.addChild(this.cont);
+    this.hover=false;
+    this.cont.eventMode='static'; this.cont.cursor='pointer';
+    this.cont.on('pointertap', ()=>removeCreature(this));
+    this.cont.on('pointerover', ()=>{ this.hover=true; });
+    this.cont.on('pointerout', ()=>{ this.hover=false; });
     // etiqueta con el nombre (no rota ni se voltea con el pez)
     this.label=null;
     if(name && name.trim()){
@@ -325,7 +330,7 @@ class Creature{
     // profundidad -> tinte azulado
     const depth=(this.baseY-H()*0.10)/(H()*0.70);
     const tint=lerpColor(0xffffff,0x88b8d0,Math.max(0,Math.min(1,depth))*0.55);
-    this.sprite.tint=tint;
+    this.sprite.tint=this.hover?0xff9a9a:tint;
 
     // etiqueta del nombre: sigue a la criatura, siempre derecha y legible
     if(this.label){
@@ -368,6 +373,11 @@ function addCreature(texture,x,y,name){
   if(x!=null){ c.cont.x=x; c.baseY=y; c.cont.y=y; }
   creatures.push(c); splash(c.cont.x,c.cont.y); updateCount();
   document.getElementById('empty').classList.add('hide');
+}
+function removeCreature(c){
+  const i=creatures.indexOf(c); if(i<0) return;
+  creatures.splice(i,1); c.remove(); updateCount();
+  if(!creatures.length) document.getElementById('empty').classList.remove('hide');
 }
 function updateCount(){ document.getElementById('count').textContent=creatures.length; }
 
