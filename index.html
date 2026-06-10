@@ -170,8 +170,9 @@ const plantLayer    = new PIXI.Container();
 const planktonLayer = new PIXI.Container();
 const bubbleLayer   = new PIXI.Container();
 const creatureLayer = new PIXI.Container();
+const labelLayer    = new PIXI.Container();
 const fxLayer       = new PIXI.Container();
-app.stage.addChild(depthLayer, plantLayer, planktonLayer, bubbleLayer, creatureLayer, fxLayer);
+app.stage.addChild(depthLayer, plantLayer, planktonLayer, bubbleLayer, creatureLayer, labelLayer, fxLayer);
 
 const W = () => app.renderer.width / app.renderer.resolution;
 const H = () => app.renderer.height / app.renderer.resolution;
@@ -257,13 +258,14 @@ function lerpColor(a,b,t){
 }
 
 class Creature{
-  constructor(texture){
+  constructor(texture, name){
     this.cont=new PIXI.Container();
     this.halo=new PIXI.Sprite(texture); this.halo.anchor.set(.5); this.halo.tint=0x05202e; this.halo.alpha=.32; this.halo.scale.set(1.06);
     this.sprite=new PIXI.Sprite(texture); this.sprite.anchor.set(.5);
     this.cont.addChild(this.halo,this.sprite);
     const target=120+Math.random()*70;
     this.baseScale=target/Math.max(texture.width,texture.height);
+    this.halfHpix=(texture.height*this.baseScale)/2;
     this.cont.x=Math.random()*W();
     this.baseY=H()*0.22+Math.random()*H()*0.5;
     this.cont.y=this.baseY;
@@ -277,6 +279,17 @@ class Creature{
     this.turnTimer=200+Math.random()*400;
     this.spawnT=0; this.cont.alpha=0;
     creatureLayer.addChild(this.cont);
+    // etiqueta con el nombre (no rota ni se voltea con el pez)
+    this.label=null;
+    if(name && name.trim()){
+      this.label=new PIXI.Text(name.trim(), new PIXI.TextStyle({
+        fontFamily:'Fredoka, sans-serif', fontSize:22, fontWeight:'600', fill:'#ffffff',
+        stroke:'#04202b', strokeThickness:5, dropShadow:true, dropShadowColor:'#021019',
+        dropShadowBlur:4, dropShadowDistance:1
+      }));
+      this.label.anchor.set(0.5); this.label.alpha=0;
+      labelLayer.addChild(this.label);
+    }
   }
   applyScale(s){ this.cont.scale.set(s); }
   update(d){
@@ -314,6 +327,13 @@ class Creature{
     const tint=lerpColor(0xffffff,0x88b8d0,Math.max(0,Math.min(1,depth))*0.55);
     this.sprite.tint=tint;
 
+    // etiqueta del nombre: sigue a la criatura, siempre derecha y legible
+    if(this.label){
+      this.label.x=this.cont.x;
+      this.label.y=this.cont.y + this.halfHpix*Math.abs(this.cont.scale.y) + 16;
+      this.label.alpha=this.cont.alpha;
+    }
+
     // burbujitas
     this.bubbleTimer-=d;
     if(this.bubbleTimer<=0 && !reduceMotion){
@@ -324,9 +344,9 @@ class Creature{
     }
   }
   remove(){
-    const c=this.cont;
-    const fade=()=>{ c.alpha-=0.05; c.scale.x*=0.95; c.scale.y*=0.95;
-      if(c.alpha<=0){ creatureLayer.removeChild(c); c.destroy({children:true}); }
+    const c=this.cont; const lbl=this.label;
+    const fade=()=>{ c.alpha-=0.05; c.scale.x*=0.95; c.scale.y*=0.95; if(lbl) lbl.alpha=Math.max(0,c.alpha);
+      if(c.alpha<=0){ creatureLayer.removeChild(c); c.destroy({children:true}); if(lbl){ labelLayer.removeChild(lbl); lbl.destroy(); } }
       else requestAnimationFrame(fade); };
     fade();
   }
@@ -342,9 +362,9 @@ function splash(x,y){
     step();
   }
 }
-function addCreature(texture,x,y){
+function addCreature(texture,x,y,name){
   if(creatures.length>=MAX_CREATURES){ creatures.shift().remove(); }
-  const c=new Creature(texture);
+  const c=new Creature(texture, name);
   if(x!=null){ c.cont.x=x; c.baseY=y; c.cont.y=y; }
   creatures.push(c); splash(c.cont.x,c.cont.y); updateCount();
   document.getElementById('empty').classList.add('hide');
@@ -525,8 +545,9 @@ function setConn(state){
   db.channel('oceano-live')
     .on('postgres_changes',{event:'INSERT',schema:'public',table:'dibujos'}, (p)=>{
       const url=p.new && p.new.image_url; if(!url) return;
+      const nombre=p.new.nombre || '';
       const img=new Image(); img.crossOrigin='anonymous';
-      img.onload=()=>processAndDrop(img,70);
+      img.onload=()=>addCreature(PIXI.Texture.from(img), W()*0.5+(Math.random()-.5)*W()*0.42, H()*0.28+Math.random()*H()*0.44, nombre);
       img.onerror=()=>console.warn('No se pudo cargar la imagen remota:', url);
       img.src=url;
     })
