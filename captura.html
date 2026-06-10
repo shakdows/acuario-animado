@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Tomar foto · Acuario Mágico</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<style>
+  :root{--biolum:#2ee6cf;--coral:#ff7a59;--foam:#eafaff}
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;font-family:"Nunito",system-ui,sans-serif;color:var(--foam);overflow:hidden}
+  body{background:linear-gradient(180deg,#1593b0 0%,#0a5a7a 40%,#04202d 100%);display:flex;flex-direction:column}
+  header{display:flex;align-items:center;gap:9px;padding:18px 20px}
+  header .dot{width:11px;height:11px;border-radius:50%;background:var(--biolum);box-shadow:0 0 12px var(--biolum)}
+  header b{font-family:"Fredoka";font-weight:600;letter-spacing:.2em;font-size:13px}
+  header span{font-family:"Fredoka";font-weight:500;font-size:13px;color:rgba(234,250,255,.55)}
+
+  .stage{flex:1;position:relative;margin:6px 16px 0;border-radius:24px;overflow:hidden;
+    background:#021019;border:1px solid rgba(46,230,207,.25);display:flex;align-items:center;justify-content:center}
+  video{width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
+  .frameguide{position:absolute;inset:14px;border:2px dashed rgba(255,255,255,.35);border-radius:18px;pointer-events:none}
+  .msg{position:absolute;padding:26px;text-align:center;font-size:15px;line-height:1.5;color:#dff7f4}
+
+  .result{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:18px;
+    background:radial-gradient(120% 100% at 50% 30%,rgba(46,230,207,.18),transparent 55%),#04202d;padding:24px;text-align:center}
+  .result.show{display:flex}
+  .result img{max-width:70%;max-height:42%;filter:drop-shadow(0 10px 24px rgba(0,0,0,.5))}
+  .result h2{font-family:"Fredoka";font-weight:600;font-size:22px}
+  .result p{font-size:14px;color:rgba(234,250,255,.7)}
+  .spinner{width:42px;height:42px;border-radius:50%;border:4px solid rgba(255,255,255,.15);border-top-color:var(--biolum);animation:spin .9s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  .dock{padding:18px 20px 30px;display:flex;flex-direction:column;align-items:center;gap:14px}
+  .shoot{width:84px;height:84px;border-radius:50%;border:none;cursor:pointer;
+    background:linear-gradient(135deg,#3df0d8,#1bbfae);box-shadow:0 10px 30px rgba(46,230,207,.45), inset 0 2px 0 rgba(255,255,255,.4);
+    display:flex;align-items:center;justify-content:center;transition:transform .12s ease}
+  .shoot:active{transform:scale(.92)}
+  .shoot::after{content:"";width:64px;height:64px;border-radius:50%;border:3px solid rgba(4,32,45,.55)}
+  .hint{font-family:"Fredoka";font-weight:500;font-size:14px;color:rgba(234,250,255,.7);text-align:center}
+  .btn{font-family:"Fredoka";font-weight:600;font-size:16px;border:none;cursor:pointer;padding:15px 30px;border-radius:16px;
+    background:linear-gradient(135deg,#3df0d8,#1bbfae);color:#04202b}
+  .btn.ghost{background:rgba(255,255,255,.1);color:#dff7f4;border:1px solid rgba(255,255,255,.16)}
+</style>
+</head>
+<body>
+  <header><i class="dot"></i><b>VERONIX</b><span>· Tu dibujo al mar</span></header>
+
+  <div class="stage">
+    <video id="video" autoplay playsinline muted></video>
+    <div class="frameguide" id="guide"></div>
+    <div class="msg" id="msg" style="display:none"></div>
+
+    <div class="result" id="result">
+      <div id="resultInner"></div>
+    </div>
+  </div>
+
+  <div class="dock" id="dock">
+    <button class="shoot" id="shoot" aria-label="Tomar foto"></button>
+    <div class="hint">Encuadra el dibujo dentro del marco y toca el botón</div>
+  </div>
+
+<script>
+const cfg = window.ACUARIO_CONFIG || {};
+const ready = cfg.SUPABASE_URL && cfg.SUPABASE_ANON_KEY && cfg.SUPABASE_URL.indexOf('TU-')<0;
+const db = (ready && window.supabase) ? window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY) : null;
+
+const video=document.getElementById('video');
+const msg=document.getElementById('msg');
+const result=document.getElementById('result');
+const resultInner=document.getElementById('resultInner');
+const dock=document.getElementById('dock');
+let stream=null;
+
+async function startCam(){
+  try{
+    stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1600},height:{ideal:1200}}});
+    video.srcObject=stream;
+  }catch(e){
+    msg.style.display='block';
+    msg.textContent='No se pudo abrir la cámara. Da permiso de cámara y recarga. (Necesita conexión segura HTTPS.)';
+    video.style.display='none';
+  }
+}
+if(!ready){
+  msg.style.display='block';
+  msg.innerHTML='Falta configurar Supabase en <b>config.js</b>.<br>Pega tu URL y ANON KEY.';
+} else { startCam(); }
+
+function resizeToBlob(srcCanvas, maxDim, cb){
+  const iw=srcCanvas.width, ih=srcCanvas.height;
+  const scale=Math.min(1, maxDim/Math.max(iw,ih));
+  const w=Math.round(iw*scale), h=Math.round(ih*scale);
+  const c=document.createElement('canvas'); c.width=w; c.height=h;
+  c.getContext('2d').drawImage(srcCanvas,0,0,w,h);
+  c.toBlob(b=>cb(b,c.toDataURL('image/jpeg',.85)), 'image/jpeg', .85);
+}
+
+document.getElementById('shoot').onclick=()=>{
+  if(!stream || !db) return;
+  const cap=document.createElement('canvas');
+  cap.width=video.videoWidth; cap.height=video.videoHeight;
+  const ctx=cap.getContext('2d');
+  ctx.translate(cap.width,0); ctx.scale(-1,1);   // des-espeja
+  ctx.drawImage(video,0,0);
+  resizeToBlob(cap, 1200, async (blob, dataUrl)=>{
+    showState('sending', dataUrl);
+    try{
+      const name=Date.now()+'-'+Math.random().toString(36).slice(2,8)+'.jpg';
+      const up=await db.storage.from('dibujos').upload(name, blob, {contentType:'image/jpeg'});
+      if(up.error) throw up.error;
+      const pub=db.storage.from('dibujos').getPublicUrl(name).data.publicUrl;
+      const ins=await db.from('dibujos').insert({image_url:pub});
+      if(ins.error) throw ins.error;
+      showState('done', dataUrl);
+    }catch(err){
+      console.error(err); showState('error', dataUrl, err.message||'');
+    }
+  });
+};
+
+function showState(state, dataUrl, errText){
+  dock.style.display='none'; result.classList.add('show');
+  if(state==='sending'){
+    resultInner.innerHTML='<div class="spinner"></div><h2>Enviando al océano…</h2><p>Un momentito</p>';
+  } else if(state==='done'){
+    resultInner.innerHTML='<img src="'+dataUrl+'"><h2>¡Listo! Tu dibujo está nadando 🐠</h2><p>Mira la pantalla grande</p><button class="btn" id="again">Tomar otro</button>';
+    document.getElementById('again').onclick=reset;
+  } else {
+    resultInner.innerHTML='<h2>Uy, no se pudo enviar</h2><p>'+(errText||'Revisa la conexión e inténtalo de nuevo')+'</p><button class="btn ghost" id="again">Reintentar</button>';
+    document.getElementById('again').onclick=reset;
+  }
+}
+function reset(){ result.classList.remove('show'); dock.style.display='flex'; }
+</script>
+</body>
+</html>
