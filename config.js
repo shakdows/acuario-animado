@@ -7,5 +7,5 @@
 // ============================================================
 window.ACUARIO_CONFIG = {
   SUPABASE_URL:      "https://ulxlhncfflqffrttikxm.supabase.co",
-  SUPABASE_ANON_KEY: "sb_publishable_U7Ds1NTKUqrKsOsTb5abQQ_Q__vbo3j"  // tu key completa
+  SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVseGxobmNmZmxxZmZydHRpa3htIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwNDc4NzUsImV4cCI6MjA5NjYyMzg3NX0.v6enbbRBc4-CJHAhQkHZOpSEh1fqqKSd7dC8AWS6oBA"  // tu key completa
 };
