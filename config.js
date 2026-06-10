@@ -6,6 +6,7 @@
 //   por las políticas RLS. No pongas aquí la "service_role".)
 // ============================================================
 window.ACUARIO_CONFIG = {
-  SUPABASE_URL:      "https://TU-PROYECTO.supabase.co",
-  SUPABASE_ANON_KEY: "TU-ANON-KEY-AQUI"
+  SUPABASE_URL:      "https://ulxlhncfflqffrttikxm.supabase.co",
+  SUPABASE_ANON_KEY: "sb_publishable_U7Ds1NTKUqrKsOsTb5abQQ..."  // tu key completa
+};
 };
