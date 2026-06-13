@@ -43,6 +43,10 @@
   .rotbtn{width:48px;height:40px;border-radius:11px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.08);color:#dff7f4;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center}
   .rotbtn:active{transform:scale(.94)}
   .rothint{font-size:11.5px;color:rgba(234,250,255,.5);font-family:"Fredoka";line-height:1.3}
+  .persgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+  .chip{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 3px;border-radius:11px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);cursor:pointer;font-family:"Fredoka";font-size:10px;color:#cdeef0}
+  .chip .em{font-size:20px;line-height:1}
+  .chip.sel{border-color:var(--biolum);background:rgba(46,230,207,.18)}
   .row{display:flex;gap:10px;margin-top:6px}
   .btn{flex:1;font-family:"Fredoka";font-weight:600;font-size:16px;border:none;cursor:pointer;padding:14px;border-radius:14px;background:linear-gradient(135deg,#3df0d8,#1bbfae);color:#04202b}
   .btn.ghost{background:rgba(255,255,255,.1);color:#dff7f4;border:1px solid rgba(255,255,255,.16);flex:.55}
@@ -93,6 +97,10 @@
         <div class="field">
           <label>Nombre del autor</label>
           <input type="text" id="nombre" maxlength="16" placeholder="Ej: Mateo" autocomplete="off">
+        </div>
+        <div class="field">
+          <label>¿Qué animal coloreó? <span id="persVal">—</span></label>
+          <div class="persgrid" id="persgrid"></div>
         </div>
         <div class="row">
           <button class="btn ghost" id="retake">Repetir</button>
@@ -240,6 +248,14 @@ cutSlider.addEventListener('change', recompute);
 document.getElementById('rotL').onclick=()=>{ if(rawResized){ rawResized=rotate90(rawResized,false); recompute(); } };
 document.getElementById('rotR').onclick=()=>{ if(rawResized){ rawResized=rotate90(rawResized,true); recompute(); } };
 
+// selector de personaje (para el modo Cine)
+const PERS=[['pez','🐟','Pez'],['medusa','🪼','Medusa'],['estrella','⭐','Estrella'],['pulpo','🐙','Pulpo'],['caballito','🐴','Caballito'],['tortuga','🐢','Tortuga'],['cangrejo','🦀','Cangrejo'],['ballena','🐋','Ballena']];
+let personajeSel=null;
+const pg=document.getElementById('persgrid');
+PERS.forEach(([id,em,nm])=>{ const c=document.createElement('div'); c.className='chip'; c.dataset.id=id; c.innerHTML='<span class="em">'+em+'</span>'+nm;
+  c.onclick=()=>{ personajeSel=(personajeSel===id)?null:id; pg.querySelectorAll('.chip').forEach(x=>x.classList.remove('sel')); if(personajeSel)c.classList.add('sel'); document.getElementById('persVal').textContent=personajeSel?nm:'—'; };
+  pg.appendChild(c); });
+
 /* ---------- Tomar foto ---------- */
 document.getElementById('shoot').onclick=()=>{
   if(!stream || !db) return;
@@ -260,7 +276,7 @@ document.getElementById('send').onclick=()=>{
       const name=Date.now()+'-'+Math.random().toString(36).slice(2,8)+'.png';
       const up=await db.storage.from('dibujos').upload(name, blob, {contentType:'image/png'}); if(up.error) throw up.error;
       const pub=db.storage.from('dibujos').getPublicUrl(name).data.publicUrl;
-      const ins=await db.from('dibujos').insert({image_url:pub, nombre:nombre||null}); if(ins.error) throw ins.error;
+      const ins=await db.from('dibujos').insert({image_url:pub, nombre:nombre||null, personaje:personajeSel||null}); if(ins.error) throw ins.error;
       showStatus('done', finalCanvas.toDataURL('image/png'), nombre);
     }catch(err){ console.error(err); showStatus('error','', err.message||''); }
   }, 'image/png');
@@ -272,7 +288,7 @@ function showStatus(state, dataUrl, extra){
   else if(state==='done'){ statusInner.innerHTML='<img src="'+dataUrl+'"><h2>¡Listo'+(extra?(', '+extra):'')+'! 🐠</h2><p>Tu dibujo ya está nadando. Mira la pantalla grande.</p><button class="btn" id="again" style="max-width:220px">Tomar otro</button>'; document.getElementById('again').onclick=reset; }
   else { statusInner.innerHTML='<h2>Uy, no se pudo enviar</h2><p>'+(extra||'Revisa la conexión e inténtalo de nuevo')+'</p><button class="btn ghost" id="again" style="max-width:220px;flex:none">Reintentar</button>'; document.getElementById('again').onclick=()=>{ statusEl.classList.remove('show'); review.classList.add('show'); }; }
 }
-function reset(){ statusEl.classList.remove('show'); dock.classList.remove('hide'); document.getElementById('nombre').value=''; sharpSlider.value=35; cutSlider.value=65; rawResized=null; baseCropped=null; finalCanvas=null; }
+function reset(){ statusEl.classList.remove('show'); dock.classList.remove('hide'); document.getElementById('nombre').value=''; sharpSlider.value=35; cutSlider.value=65; rawResized=null; baseCropped=null; finalCanvas=null; personajeSel=null; document.getElementById('persVal').textContent='—'; pg.querySelectorAll('.chip').forEach(x=>x.classList.remove('sel')); }
 </script>
 </body>
 </html>
