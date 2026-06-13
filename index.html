@@ -101,6 +101,14 @@
     background:rgba(3,18,28,.62);border:1px solid rgba(46,230,207,.3);backdrop-filter:blur(8px);
     padding:18px 28px;border-radius:20px;text-shadow:0 2px 12px rgba(0,0,0,.6);animation:subin .5s ease}
   @keyframes subin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  .cineSub.big{font-size:clamp(26px,4.6vw,46px);font-weight:700;border-color:rgba(46,230,207,.45);margin-bottom:0;align-self:center;position:absolute;top:50%;transform:translateY(-50%);max-width:min(960px,92vw)}
+  .cineCredits{position:absolute;inset:0;display:none;overflow:hidden;pointer-events:none}
+  .cineCredits.show{display:block}
+  .cineCredits .roll{position:absolute;left:0;right:0;top:100%;text-align:center;animation:roll 22s linear forwards}
+  @keyframes roll{from{transform:translateY(0)}to{transform:translateY(calc(-100% - 60vh))}}
+  .crTitle{font-family:"Fredoka";font-weight:700;font-size:clamp(28px,5vw,40px);color:#2ee6cf;margin-bottom:28px;text-shadow:0 0 24px rgba(46,230,207,.5)}
+  .crName{font-family:"Fredoka";font-weight:600;font-size:clamp(24px,4vw,34px);color:#fff;margin:12px 0;text-shadow:0 2px 12px rgba(0,0,0,.5)}
+  .crEnd{font-family:"Fredoka";font-weight:600;font-size:clamp(18px,3vw,24px);color:rgba(234,250,255,.8);margin-top:48px;line-height:1.7}
   .cinebar{pointer-events:auto;display:flex;align-items:center;gap:12px;margin-bottom:26px;
     background:var(--glass);border:1px solid var(--glass-line);backdrop-filter:blur(14px);padding:10px 14px;border-radius:18px}
   .cinebar button{font-family:"Fredoka";font-weight:600;border:none;cursor:pointer;border-radius:12px;
@@ -157,6 +165,7 @@
   </div>
 
   <div class="cinema" id="cinema">
+    <div class="cineCredits" id="cineCredits"></div>
     <div class="cineSub" id="cineSub"></div>
     <div class="cinebar">
       <button id="cinePrev" aria-label="Anterior">‹</button>
@@ -567,11 +576,22 @@ document.getElementById('btnClear').onclick=()=>{
    MODO CINE — los dibujos actúan el cuento "La Perla de Luz"
    ============================================================ */
 const ROLES=['pez','medusa','estrella','pulpo','caballito','tortuga','cangrejo','ballena'];
+const PERSONA={
+  pez:['Nilo','el pez más curioso del arrecife'],
+  medusa:['Lumi','la medusa que ilumina la oscuridad'],
+  estrella:['Estela','la estrella que conoce todos los caminos'],
+  pulpo:['Otto','el pulpo de ocho brazos hábiles'],
+  caballito:['Marino','el caballito mensajero más veloz'],
+  tortuga:['Tomasa','la tortuga más sabia del mar'],
+  cangrejo:['Tenaza','el cangrejo de pinzas poderosas'],
+  ballena:['Azul','la ballena que canta canciones mágicas'],
+};
 const castByRole={}, looseArt=[];
 function registerCast(role, tex, nombre){
   const e={tex, nombre:(nombre||'').trim()};
   if(role && ROLES.includes(role)) castByRole[role]=e; else looseArt.push(e);
 }
+
 const cineTex={}; let cineReady=false;
 function preloadCine(){
   if(cineReady) return Promise.resolve();
@@ -581,59 +601,123 @@ function preloadCine(){
   }))).then(()=>{ cineReady=true; });
 }
 preloadCine();
+
 const cineNameStyle=new PIXI.TextStyle({fontFamily:'Fredoka, sans-serif',fontSize:26,fontWeight:'700',fill:'#ffffff',stroke:'#063047',strokeThickness:6,dropShadow:true,dropShadowColor:'#021019',dropShadowBlur:4,dropShadowDistance:1});
 
 const cinemaLayer=new PIXI.Container(); cinemaLayer.visible=false; app.stage.addChild(cinemaLayer);
 const cineDark=new PIXI.Graphics(); cinemaLayer.addChild(cineDark);
+const cineGlow=new PIXI.Container(); cinemaLayer.addChild(cineGlow);
+const cineRings=new PIXI.Graphics(); cinemaLayer.addChild(cineRings);
 const cinePearl=new PIXI.Container(); cinemaLayer.addChild(cinePearl);
-(function(){ const g=new PIXI.Graphics();
-  for(let i=5;i>=1;i--){ g.beginFill(0xffffff, i===1?1:0.10).drawCircle(0,0,13*i).endFill(); }
-  g.beginFill(0x2ee6cf,.5).drawCircle(0,0,8).endFill(); cinePearl.addChild(g); })();
+(function(){ const g=new PIXI.Graphics(); for(let i=6;i>=1;i--){ g.beginFill(0xffffff, i===1?1:0.08).drawCircle(0,0,12*i).endFill(); } g.beginFill(0x2ee6cf,.5).drawCircle(0,0,7).endFill(); cinePearl.addChild(g); })();
 cinePearl.visible=false;
+(function(){ const g=new PIXI.Graphics(); for(let i=8;i>=1;i--){ g.beginFill(0x9fffe9, 0.045).drawCircle(0,0,20*i).endFill(); } cineGlow.addChild(g); })();
+cineGlow.visible=false;
 
 class Actor{
-  constructor(role, texture, nombre){
-    this.role=role; this.sprite=new PIXI.Sprite(texture||PIXI.Texture.WHITE); this.sprite.anchor.set(.5);
+  constructor(role, texture, kid){
+    this.role=role; this.kid=kid||'';
+    this.sprite=new PIXI.Sprite(texture||PIXI.Texture.WHITE); this.sprite.anchor.set(.5);
     this.x=this.tx=W()/2; this.y=this.ty=H()*1.4; this.lastx=this.x; this._f=1;
-    this.sc=this.tsc=1; this.av=0; this.tav=0; this.t=Math.random()*100; this._tint=0xffffff;
+    this.sc=this.tsc=1; this.av=0; this.tav=0; this.t=Math.random()*100; this._tint=0xffffff; this.bob=8; this.talk=0;
     this.sprite.alpha=0; cinemaLayer.addChild(this.sprite);
     this.label=null;
-    if(nombre){ this.label=new PIXI.Text(nombre, cineNameStyle); this.label.anchor.set(.5,0); this.label.alpha=0; cinemaLayer.addChild(this.label); }
+    if(this.kid){ this.label=new PIXI.Text(this.kid, cineNameStyle); this.label.anchor.set(.5,0); this.label.alpha=0; cinemaLayer.addChild(this.label); }
   }
   fit(){ const t=this.sprite.texture, m=Math.max(t.width||1,t.height||1); return m>4?165/m:0.5; }
   set(tx,ty,tsc,tav){ this.tx=tx; this.ty=ty; this.tsc=tsc; this.tav=tav; }
   tint(c){ this._tint=c; }
   render(){
-    const s=this.fit()*this.sc;
+    const tp=this.talk>0?(1+Math.sin(this.t*0.5)*0.05):1;
+    const s=this.fit()*this.sc*tp;
     this.sprite.scale.set(s*this._f, s);
-    this.sprite.x=this.x; this.sprite.y=this.y+Math.sin(this.t*0.05)*8;
+    this.sprite.x=this.x; this.sprite.y=this.y+Math.sin(this.t*0.05)*this.bob;
     this.sprite.rotation=Math.sin(this.t*0.03)*0.05; this.sprite.alpha=this.av; this.sprite.tint=this._tint;
-    if(this.label){ this.label.x=this.x; this.label.y=this.y+Math.abs(this.sprite.height)/2+6; this.label.alpha=this.av; this.label.scale.set(Math.min(1,Math.max(.5,this.sc))); }
+    if(this.label){ this.label.x=this.x; this.label.y=this.y+Math.abs(this.sprite.height)/2+6; this.label.alpha=this.av*0.95; this.label.scale.set(Math.min(1,Math.max(.5,this.sc))); }
   }
   update(d){
     this.t+=d;
     this.x+=(this.tx-this.x)*0.06*d; this.y+=(this.ty-this.y)*0.06*d;
     this.sc+=(this.tsc-this.sc)*0.07*d; this.av+=(this.tav-this.av)*0.10*d;
-    const dx=this.x-this.lastx; this.lastx=this.x;
-    if(Math.abs(dx)>0.2) this._f=dx>0?1:-1;
+    const dx=this.x-this.lastx; this.lastx=this.x; if(Math.abs(dx)>0.2) this._f=dx>0?1:-1;
     this.render();
   }
 }
 
 let actors={}, cineActive=false, scene=0, sceneStart=0, cinePaused=false, pausedElapsed=0;
+let curScene=null, glowRole=null, ringsOn=false, ringT=0;
 
 const GUION=[
- {txt:"El arrecife brillaba gracias a la Perla de Luz… hasta que un día se apagó.", dur:8500, cast:['pez'], star:'pez', flag:'gris'},
- {txt:"El pececito Nilo reunió a todos sus amigos del mar para buscarla.", dur:9000, cast:ROLES, star:'pez', flag:'gris'},
- {txt:"La sabia tortuga Tomasa conocía el camino: la Cueva Oscura.", dur:8500, cast:ROLES, star:'tortuga'},
- {txt:"La gran ballena Azul los cruzó por la corriente más fuerte.", dur:8500, cast:ROLES, star:'ballena'},
- {txt:"¡Chac, chac! El cangrejo Tenaza cortó el alga que cerraba la cueva.", dur:8500, cast:ROLES, star:'cangrejo'},
- {txt:"En la oscuridad, la medusa Lumi encendió su luz para guiar a todos.", dur:8500, cast:ROLES, star:'medusa', flag:'dark'},
- {txt:"El pulpo Otto abrió la concha gigante con sus ocho brazos.", dur:8500, cast:ROLES, star:'pulpo'},
- {txt:"Azul cantó una canción mágica… y la Perla de Luz volvió a brillar.", dur:8500, cast:ROLES, star:'ballena', flag:'perla'},
- {txt:"La estrella Estela los guió de regreso, y el mar recuperó todos sus colores.", dur:8500, cast:ROLES, star:'estrella', flag:'perla'},
- {txt:"Juntos, cada uno con su don especial, ¡salvaron el mar!", dur:8500, cast:ROLES, star:null, flag:'fiesta'},
- {txt:"🎉 ¡Y vivieron felices para siempre en el Acuario Mágico! 🎉", dur:13000, cast:ROLES, star:null, flag:'fin'},
+ {mode:'titulo', txt:'VERONIX presenta', dur:5000},
+ {mode:'titulo', txt:'✨ La Perla de Luz ✨', dur:7000, fx:'perla'},
+ {mode:'titulo', txt:'Una aventura del fondo del mar', dur:6000},
+ {mode:'grupo', txt:'En lo más hondo del océano había un arrecife lleno de vida y color.', dur:9000, star:null},
+ {mode:'grupo', txt:'El sol del mediodía lo atravesaba en rayos dorados.', dur:8000, star:null},
+ {mode:'grupo', txt:'Todos los animales del mar vivían allí, felices y en paz.', dur:8500, star:null},
+ {mode:'titulo', txt:'Pero antes de empezar… conozcamos a nuestros héroes.', dur:6500},
+
+ {mode:'presenta', present:'pez', dur:12000},
+ {mode:'presenta', present:'medusa', dur:12000},
+ {mode:'presenta', present:'estrella', dur:12000},
+ {mode:'presenta', present:'pulpo', dur:12000},
+ {mode:'presenta', present:'caballito', dur:12000},
+ {mode:'presenta', present:'tortuga', dur:12000},
+ {mode:'presenta', present:'cangrejo', dur:12000},
+ {mode:'presenta', present:'ballena', dur:12000},
+
+ {mode:'circulo', txt:'En el centro del arrecife brillaba la Perla de Luz.', dur:8500, fx:'perla'},
+ {mode:'circulo', txt:'Su luz llenaba el mar de color y despertaba a todos cada mañana.', dur:9000, fx:'perla'},
+ {mode:'titulo', txt:'Hasta que una noche… algo salió mal.', dur:6500},
+ {mode:'titulo', txt:'La perla rodó por una grieta… y desapareció en la oscuridad.', dur:8000},
+ {mode:'grupo', txt:'El mar se quedó frío, gris y silencioso.', dur:8000, fx:'gris', star:null},
+ {mode:'grupo', txt:'Los peces chocaban entre ellos sin poder ver su camino.', dur:8000, fx:'gris', star:null},
+ {mode:'solo', star:'pez', speaker:'pez', txt:'Nilo fue el primero en notar que la luz se había ido.', dur:8000, fx:'gris'},
+ {mode:'solo', star:'pez', speaker:'pez', txt:'«¡Tenemos que encontrar la Perla de Luz!», gritó.', dur:8000, fx:'gris'},
+ {mode:'duo', star:'pez', speaker:'caballito', txt:'«Yo llevaré el aviso a todo el arrecife», dijo Marino, veloz.', dur:9000, fx:'gris'},
+ {mode:'grupo', txt:'Y uno a uno, todos los amigos respondieron al llamado.', dur:8000, fx:'gris', star:'pez'},
+
+ {mode:'duo', star:'tortuga', speaker:'tortuga', txt:'«Yo sé dónde está», dijo la sabia Tomasa. «En la Cueva Oscura».', dur:9500},
+ {mode:'duo', star:'tortuga', speaker:'pez', txt:'«Es peligroso… pero juntos podemos lograrlo», respondió Nilo.', dur:9000},
+ {mode:'viaje', txt:'Y así comenzó el gran viaje hacia la Cueva Oscura.', dur:8000, star:'tortuga'},
+ {mode:'viaje', txt:'Nadaron sobre praderas de algas y montañas de coral.', dur:8500, star:'tortuga'},
+ {mode:'viaje', txt:'El camino era largo, pero nadie quería rendirse.', dur:8000, star:'tortuga'},
+ {mode:'viaje', txt:'De pronto, una corriente fortísima les cerró el paso.', dur:8000, star:'tortuga', fx:'temblor'},
+ {mode:'solo', star:'ballena', speaker:'ballena', txt:'«¡Suban a mi lomo!», dijo Azul, la gran ballena.', dur:8000},
+ {mode:'cruce', txt:'Con toda su fuerza, Azul cruzó la corriente llevándolos a salvo.', dur:9500, star:'ballena'},
+ {mode:'cruce', txt:'¡Lo lograron! Al otro lado estaba la entrada de la cueva.', dur:8500, star:'ballena'},
+ {mode:'grupo', txt:'Pero un alga gigante cubría la entrada. Nadie podía pasar.', dur:8500, star:null},
+ {mode:'solo', star:'cangrejo', speaker:'cangrejo', txt:'«Déjenmelo a mí», dijo Tenaza, afilando sus pinzas.', dur:8000},
+ {mode:'solo', star:'cangrejo', speaker:'cangrejo', txt:'¡Chac, chac, chac! El alga cayó cortada en pedazos.', dur:8000, fx:'corte'},
+ {mode:'grupo', txt:'La entrada quedó libre y todos entraron a la cueva.', dur:8000, star:'cangrejo'},
+
+ {mode:'grupo', txt:'Adentro estaba tan oscuro que no se veían ni las aletas.', dur:8000, fx:'dark', star:null},
+ {mode:'solo', star:'medusa', speaker:'medusa', txt:'«No teman», dijo Lumi. «Yo los iluminaré».', dur:8000, fx:'dark'},
+ {mode:'oscuridad', txt:'La medusa encendió su luz, suave y azulada.', dur:9000, star:'medusa', fx:'brilla'},
+ {mode:'oscuridad', txt:'Y la cueva entera se llenó de un resplandor mágico.', dur:8500, star:'medusa', fx:'brilla'},
+ {mode:'oscuridad', txt:'Avanzaron despacio, siguiendo su luz paso a paso.', dur:8500, star:'medusa', fx:'brilla'},
+ {mode:'grupo', txt:'Al fondo hallaron una concha gigante, cerrada con fuerza.', dur:8500, star:null},
+ {mode:'solo', star:'pulpo', speaker:'pulpo', txt:'«Ocho brazos serán suficientes», dijo Otto.', dur:8500},
+ {mode:'solo', star:'pulpo', speaker:'pulpo', txt:'Tiró y tiró… hasta que la concha se abrió de golpe.', dur:9000, fx:'corte'},
+ {mode:'circulo', txt:'¡Ahí estaba la Perla de Luz! Pero estaba apagada.', dur:8500, fx:'perla', star:null},
+ {mode:'circulo', txt:'Por más que la tocaban, la perla no despertaba.', dur:8000, fx:'perla'},
+
+ {mode:'solo', star:'ballena', speaker:'ballena', txt:'Entonces Azul cerró los ojos y empezó a cantar.', dur:8500},
+ {mode:'solo', star:'ballena', speaker:'ballena', txt:'Una canción antigua, lenta y profunda que solo ella conocía.', dur:9000, fx:'canta'},
+ {mode:'circulo', txt:'Todos contuvieron la respiración, esperando un milagro.', dur:8000, fx:'perla'},
+ {mode:'circulo', txt:'Poco a poco, la perla comenzó a brillar otra vez…', dur:9000, fx:'perla', star:'ballena'},
+ {mode:'circulo', txt:'¡hasta iluminar toda la cueva con su luz!', dur:8000, fx:'perla'},
+ {mode:'solo', star:'estrella', speaker:'estrella', txt:'«¡Síganme!», brilló Estela. «Conozco el camino a casa».', dur:8500, fx:'brilla'},
+ {mode:'viaje', txt:'La estrella los guió de vuelta, como una brújula de luz.', dur:9000, star:'estrella', fx:'brilla'},
+ {mode:'circulo', txt:'Colocaron la perla en su roca, en el centro del arrecife.', dur:8500, fx:'perla', star:null},
+ {mode:'grupo', txt:'Y de golpe… ¡el mar recuperó todos sus colores!', dur:8500, fx:'color', star:null},
+
+ {mode:'fiesta', txt:'El arrecife brilló más que nunca. ¡Todos lo habían logrado!', dur:9000, fx:'perla'},
+ {mode:'fiesta', txt:'Hicieron una gran fiesta que duró toda la noche.', dur:8500, fx:'perla'},
+ {mode:'fiesta', txt:'Nilo miró a sus amigos y entendió algo muy importante.', dur:8500, star:'pez'},
+ {mode:'grupo', txt:'Solo, ninguno habría podido. Pero juntos, fueron invencibles.', dur:9000, star:null},
+ {mode:'fin', txt:'🎉 ¡Y vivieron felices para siempre en el Acuario Mágico! 🎉', dur:11000, fx:'perla'},
+ {mode:'titulo', txt:'Cada uno es especial. Y juntos, logramos cosas maravillosas.', dur:9000},
+ {mode:'creditos', txt:'', dur:22000},
 ];
 
 function buildActors(){
@@ -647,49 +731,81 @@ function buildActors(){
     actors[r]=new Actor(r, e.tex, e.nombre);
   });
 }
-function applyScene(i){
-  const s=GUION[i]; scene=i; sceneStart=performance.now(); pausedElapsed=0;
-  const sub=document.getElementById('cineSub'); sub.textContent=s.txt;
+function setSub(txt, mode){
+  const sub=document.getElementById('cineSub'); sub.textContent=txt;
+  sub.classList.toggle('big', mode==='titulo'||mode==='fin'||mode==='creditos');
+  sub.style.display = txt? '' : 'none';
   sub.style.animation='none'; void sub.offsetWidth; sub.style.animation='';
+}
+function startCredits(){
+  const cred=document.getElementById('cineCredits');
+  const kids=[...new Set(ROLES.map(r=>actors[r]&&actors[r].kid).filter(Boolean))];
+  const list=kids.length?kids:['Los amigos del mar'];
+  cred.innerHTML='<div class="roll"><div class="crTitle">🌟 Actuaron 🌟</div>'+
+    list.map(n=>'<div class="crName">'+n+'</div>').join('')+
+    '<div class="crEnd">✨ Gracias por crear<br>el Acuario Mágico ✨<br><br>VERONIX</div></div>';
+  cred.classList.add('show');
+  const roll=cred.querySelector('.roll'); roll.style.animation='none'; void roll.offsetWidth; roll.style.animation='';
+}
+function hide(a){ a.set(W()*0.5, H()*1.45, 0.8, 0); }
+
+function applyScene(i){
+  const s=GUION[i]; curScene=s; scene=i; sceneStart=performance.now(); pausedElapsed=0;
+  const cast=s.cast||ROLES, star=s.star, speaker=s.speaker||s.star;
+  let txt=s.txt;
+  if(s.mode==='presenta'&&s.present){ const P=PERSONA[s.present]; const kid=actors[s.present]&&actors[s.present].kid; txt=P[0]+' — '+P[1]+'.'+(kid?'   ✏️ dibujado por '+kid:''); }
+  setSub(txt, s.mode);
   document.getElementById('cineProg').textContent=(i+1)+' / '+GUION.length;
-  const festivo=(s.flag==='fiesta'||s.flag==='fin');
-  ROLES.forEach(r=>{
-    const a=actors[r]; if(!a) return;
-    if(!s.cast.includes(r)){ a.set(W()*0.5, H()*1.4, 0.8, 0); return; }
-    if(festivo){ const k=s.cast.indexOf(r), m=s.cast.length;
-      a.set(W()*(0.10+0.80*(m<=1?0.5:k/(m-1))), H()*(0.44+0.20*Math.sin(k*1.6)), 0.92, 1);
-    } else if(r===s.star){ a.set(W()*0.5, H()*0.42, 1.5, 1);
-    } else { const o=s.cast.filter(x=>x!==s.star); const k=o.indexOf(r), m=o.length;
-      a.set(W()*(0.12+0.76*(m<=1?0.5:k/(m-1))), H()*0.70, 0.82, 1); }
-  });
-  const gris=s.flag==='gris'; ROLES.forEach(r=> actors[r]&&actors[r].tint(gris?0x9aa6ad:0xffffff));
-  cineDark.clear(); if(s.flag==='dark'){ cineDark.beginFill(0x021019,0.74).drawRect(0,0,W(),H()).endFill(); }
-  const showPearl=(s.flag==='perla'||festivo); cinePearl.visible=showPearl;
-  if(showPearl){ cinePearl.x=W()*0.5; cinePearl.y=festivo?H()*0.17:(s.star?H()*0.42:H()*0.18); cinePearl.baseScale=(s.flag==='fin')?2.4:1.3; }
+  const cred=document.getElementById('cineCredits'); if(s.mode!=='creditos') cred.classList.remove('show');
+  ROLES.forEach(r=>{ const a=actors[r]; if(a){ a.bob=8; a.talk=0; } });
+
+  if(s.mode==='titulo'){ ROLES.forEach(r=> actors[r]&&hide(actors[r])); }
+  else if(s.mode==='creditos'){ ROLES.forEach((r,k)=>{ const a=actors[r]; if(a) a.set(W()*(0.10+0.80*(k/7)), H()*0.78, 0.5, 0.45); }); startCredits(); }
+  else if(s.mode==='presenta'){ ROLES.forEach(r=>{ const a=actors[r]; if(!a)return; if(r===s.present){ a.set(W()*0.5, H()*0.46, 1.7, 1); a.talk=1; } else hide(a); }); }
+  else if(s.mode==='solo'){ ROLES.forEach(r=>{ const a=actors[r]; if(!a)return; if(r===star){ a.set(W()*0.5, H()*0.45, 1.6, 1); if(speaker===r)a.talk=1; } else hide(a); }); }
+  else if(s.mode==='duo'){ const pair=[star,s.speaker].filter((v,idx,arr)=>v&&arr.indexOf(v)===idx); ROLES.forEach(r=>{ const a=actors[r]; if(!a)return; const k=pair.indexOf(r); if(k>=0){ a.set(W()*(pair.length===1?0.5:(0.34+0.32*k)), H()*0.46, 1.35, 1); if(r===speaker)a.talk=1; } else hide(a); }); }
+  else if(s.mode==='viaje'){ const m=cast.length; cast.forEach((r,k)=>{ const a=actors[r]; if(!a)return; a.set(W()*(0.12+0.76*(k/(m-1))), H()*(0.40+0.18*Math.sin(k*0.9)), 0.9, 1); a.bob=14; }); ROLES.forEach(r=>{ if(!cast.includes(r)&&actors[r]) hide(actors[r]); }); }
+  else if(s.mode==='cruce'){ const others=cast.filter(x=>x!==star); ROLES.forEach(r=>{ const a=actors[r]; if(!a)return; if(r===star){ a.set(W()*0.5, H()*0.52, 1.85, 1); } else { const k=others.indexOf(r), m=others.length; if(k>=0) a.set(W()*(0.26+0.48*(m<=1?0.5:k/(m-1))), H()*0.34, 0.6, 1); else hide(a);} }); }
+  else if(s.mode==='circulo'){ const m=cast.length; cast.forEach((r,k)=>{ const a=actors[r]; if(!a)return; const ang=-Math.PI/2+(k/m)*Math.PI*2; const R=Math.min(W(),H())*0.30; a.set(W()*0.5+Math.cos(ang)*R*1.6, H()*0.48+Math.sin(ang)*R, 0.78, 1); }); ROLES.forEach(r=>{ if(!cast.includes(r)&&actors[r]) hide(actors[r]); }); }
+  else if(s.mode==='oscuridad'){ const others=ROLES.filter(x=>x!==star); ROLES.forEach(r=>{ const a=actors[r]; if(!a)return; if(r===star){ a.set(W()*0.5, H()*0.45, 1.55, 1); a.talk=1; } else { const k=others.indexOf(r), m=others.length; a.set(W()*(0.12+0.76*(k/(m-1))), H()*0.74, 0.66, 0.8);} }); }
+  else if(s.mode==='fiesta'||s.mode==='fin'){ const m=cast.length; cast.forEach((r,k)=>{ const a=actors[r]; if(!a)return; a.set(W()*(0.10+0.80*(k/(m-1))), H()*(0.42+0.20*Math.sin(k*1.6)), 0.92, 1); a.bob=18; }); ROLES.forEach(r=>{ if(!cast.includes(r)&&actors[r]) hide(actors[r]); }); }
+  else { ROLES.forEach(r=>{ const a=actors[r]; if(!a)return; if(!cast.includes(r)){ hide(a); return; } if(r===star){ a.set(W()*0.5, H()*0.40, 1.5, 1); if(speaker===r)a.talk=1; } else { const o=cast.filter(x=>x!==star); const k=o.indexOf(r), m=o.length; a.set(W()*(0.12+0.76*(m<=1?0.5:k/(m-1))), H()*0.70, 0.82, 1);} }); }
+
+  const gris=(s.fx==='gris'); ROLES.forEach(r=> actors[r]&&actors[r].tint(gris?0x9aa6ad:0xffffff));
+  cineDark.clear(); if(s.fx==='dark'||s.mode==='oscuridad'){ const a=(s.mode==='oscuridad')?0.5:0.8; cineDark.beginFill(0x02101a,a).drawRect(0,0,W(),H()).endFill(); }
+  const showPearl=(s.fx==='perla'||s.mode==='fin'); cinePearl.visible=showPearl;
+  if(showPearl){ cinePearl.x=W()*0.5; cinePearl.y=(s.mode==='fin'||s.mode==='fiesta')?H()*0.16:(s.mode==='circulo'?H()*0.48:H()*0.20); cinePearl.baseScale=(s.mode==='fin')?2.4:(s.mode==='circulo'?1.5:1.2); }
+  glowRole=(s.fx==='brilla'||s.fx==='canta'||s.fx==='corte'||s.mode==='oscuridad')?(speaker||star):null;
+  ringsOn=(s.fx==='canta');
 }
 async function startCinema(){
   const btn=document.getElementById('btnCine');
   if(!cineReady){ btn.disabled=true; const old=btn.innerHTML; btn.textContent='Cargando…'; await preloadCine(); btn.disabled=false; btn.innerHTML=old; }
   buildActors(); app.stage.addChild(cinemaLayer);
-  cineActive=true; cinePaused=false;
-  document.getElementById('cinePlay').textContent='⏸';
+  cineActive=true; cinePaused=false; document.getElementById('cinePlay').textContent='⏸';
   creatureLayer.visible=false; labelLayer.visible=false; cinemaLayer.visible=true;
   document.getElementById('cinema').classList.add('show');
   document.querySelector('.controls').style.display='none';
   applyScene(0);
 }
 function stopCinema(){
-  cineActive=false; cinemaLayer.visible=false; cinePearl.visible=false; cineDark.clear();
+  cineActive=false; cinemaLayer.visible=false; cinePearl.visible=false; cineGlow.visible=false; cineDark.clear(); cineRings.clear();
   document.getElementById('cinema').classList.remove('show');
+  document.getElementById('cineCredits').classList.remove('show');
   document.querySelector('.controls').style.display='';
-  creatureLayer.visible=true; labelLayer.visible=true;
+  creatureLayer.visible=true; labelLayer.visible=true; cinemaLayer.x=0;
 }
 function nextScene(){ if(scene<GUION.length-1) applyScene(scene+1); else stopCinema(); }
 function prevScene(){ if(scene>0) applyScene(scene-1); }
+
 window.__cineTick=function(d){
   if(!cineActive) return;
   for(const r of ROLES) if(actors[r]) actors[r].update(d);
-  if(cinePearl.visible){ const b=cinePearl.baseScale||1.3; cinePearl.scale.set(b*(1+Math.sin(performance.now()*0.004)*0.10)); }
+  if(glowRole && actors[glowRole]){ const a=actors[glowRole]; cineGlow.visible=true; cineGlow.x=a.sprite.x; cineGlow.y=a.sprite.y; cineGlow.scale.set(1+Math.sin(performance.now()*0.003)*0.12); } else cineGlow.visible=false;
+  cineRings.clear();
+  if(ringsOn && glowRole && actors[glowRole]){ const a=actors[glowRole]; ringT+=d; for(let k=0;k<3;k++){ const ph=((ringT*0.018)+(k/3))%1; cineRings.lineStyle(3,0x9fffe9,(1-ph)*0.5); cineRings.drawCircle(a.sprite.x,a.sprite.y,40+ph*220);} }
+  if(cinePearl.visible){ const b=cinePearl.baseScale||1.2; cinePearl.scale.set(b*(1+Math.sin(performance.now()*0.004)*0.10)); }
+  cinemaLayer.x=(curScene&&curScene.fx==='temblor')?(Math.random()-0.5)*8:0;
   if(!cinePaused && performance.now()-sceneStart > GUION[scene].dur) nextScene();
 };
 document.getElementById('btnCine').onclick=startCinema;
