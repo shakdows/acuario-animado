@@ -114,6 +114,7 @@
   .cinebar button{font-family:"Fredoka";font-weight:600;border:none;cursor:pointer;border-radius:12px;
     background:rgba(255,255,255,.1);color:#dff7f4;padding:10px 14px;font-size:16px;transition:transform .12s}
   .cinebar button:active{transform:scale(.92)}
+  .cinebar button.off{opacity:.38}
   .cinebar .exit{background:linear-gradient(135deg,#ff7a59,#e8542e);color:#fff}
   .cineProg{font-family:"Fredoka";font-size:13px;color:rgba(234,250,255,.6);min-width:64px;text-align:center}
 
@@ -172,6 +173,8 @@
       <button id="cinePlay" aria-label="Pausa">⏸</button>
       <button id="cineNext" aria-label="Siguiente">›</button>
       <span class="cineProg" id="cineProg"></span>
+      <button id="cineNarr" aria-label="Narración" title="Narración por voz">🗣️</button>
+      <button id="cineAudio" aria-label="Sonido" title="Música y efectos">🎵</button>
       <button class="exit" id="cineExit">✕ Salir</button>
     </div>
   </div>
@@ -647,6 +650,71 @@ class Actor{
 let actors={}, cineActive=false, scene=0, sceneStart=0, cinePaused=false, pausedElapsed=0;
 let curScene=null, glowRole=null, ringsOn=false, ringT=0;
 
+/* ----- Narración por voz (español) ----- */
+const synth = window.speechSynthesis || null;
+let esVoice=null, narrOn=true, audioOn=true, sceneToken=0, curSubText='';
+function pickVoice(){ if(!synth) return; const vs=synth.getVoices()||[];
+  esVoice = vs.find(v=>/^es/i.test(v.lang) && /(Paulina|Sabina|Mónica|Monica|Helena|Laura|Google español)/i.test(v.name))
+        || vs.find(v=>/es-(MX|US|419|AR|CO|PE)/i.test(v.lang))
+        || vs.find(v=>/^es/i.test(v.lang)) || null;
+}
+if(synth){ pickVoice(); try{ synth.addEventListener('voiceschanged', pickVoice); }catch(e){} }
+function speak(txt, token){
+  if(!synth || !narrOn || !txt) return;
+  try{ synth.cancel(); }catch(e){}
+  const clean = txt.replace(/[✨🎉🌟✏️🔊🔇🗣️🎵]/g,'').replace(/«|»/g,'"').trim();
+  if(!clean) return;
+  const u=new SpeechSynthesisUtterance(clean);
+  if(esVoice) u.voice=esVoice; u.lang=(esVoice&&esVoice.lang)||'es-ES'; u.rate=0.96; u.pitch=1.06; u.volume=1;
+  u.onend=()=>{ if(cineActive && !cinePaused && token===sceneToken && narrOn) setTimeout(()=>{ if(cineActive && !cinePaused && token===sceneToken) nextScene(); }, 1300); };
+  try{ synth.speak(u); }catch(e){}
+}
+
+/* ----- Sonido sintetizado (ambiente + efectos) ----- */
+let actx=null, amaster=null, apadGain=null, apadOsc=[];
+function audioInit(){
+  try{
+    if(!actx){ const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return; actx=new AC();
+      amaster=actx.createGain(); amaster.gain.value=0; amaster.connect(actx.destination);
+      const len=actx.sampleRate*2, buf=actx.createBuffer(1,len,actx.sampleRate), dt=buf.getChannelData(0);
+      let b0=0,b1=0,b2=0; for(let i=0;i<len;i++){ const w=Math.random()*2-1; b0=0.99*b0+w*0.05; b1=0.96*b1+w*0.08; b2=0.90*b2+w*0.10; dt[i]=(b0+b1+b2)*0.5; }
+      const src=actx.createBufferSource(); src.buffer=buf; src.loop=true;
+      const wf=actx.createBiquadFilter(); wf.type='lowpass'; wf.frequency.value=480;
+      const lfo=actx.createOscillator(); lfo.frequency.value=0.08; const lg=actx.createGain(); lg.gain.value=280; lfo.connect(lg); lg.connect(wf.frequency);
+      const wg=actx.createGain(); wg.gain.value=0.16; src.connect(wf); wf.connect(wg); wg.connect(amaster);
+      apadGain=actx.createGain(); apadGain.gain.value=0; const pf=actx.createBiquadFilter(); pf.type='lowpass'; pf.frequency.value=950; apadGain.connect(pf); pf.connect(amaster);
+      src.start(); lfo.start();
+    }
+    if(actx.state==='suspended') actx.resume();
+    amaster.gain.setTargetAtTime(audioOn?0.9:0.0, actx.currentTime, 0.4);
+  }catch(e){}
+}
+function audioSuspend(){ try{ if(amaster&&actx) amaster.gain.setTargetAtTime(0, actx.currentTime, 0.3); }catch(e){} }
+function setChord(freqs){ if(!actx) return; try{
+  apadOsc.forEach(o=>{ try{ o.g.gain.setTargetAtTime(0,actx.currentTime,0.4); o.osc.stop(actx.currentTime+1.3);}catch(e){} }); apadOsc=[];
+  freqs.forEach(f=>{ const osc=actx.createOscillator(); osc.type='sine'; osc.frequency.value=f; const g=actx.createGain(); g.gain.value=0; osc.connect(g); g.connect(apadGain); osc.start(); g.gain.linearRampToValueAtTime(0.13, actx.currentTime+1.0); apadOsc.push({osc,g}); });
+  apadGain.gain.setTargetAtTime(0.5, actx.currentTime, 0.6);
+}catch(e){} }
+const MOODS={normal:[196,246.9,329.6], triste:[174.6,207.7,261.6], tenso:[146.8,174.6,233.1], magico:[261.6,329.6,392,523.3], alegre:[261.6,329.6,392,493.9]};
+function mood(n){ setChord(MOODS[n]||MOODS.normal); }
+function blip(freq,dur,type,vol){ if(!actx||!audioOn) return; try{ const o=actx.createOscillator(); o.type=type||'sine'; o.frequency.value=freq; const g=actx.createGain(); g.gain.value=0; o.connect(g); g.connect(amaster); const t=actx.currentTime; g.gain.linearRampToValueAtTime(vol||0.16,t+0.02); g.gain.exponentialRampToValueAtTime(0.0008,t+(dur||0.4)); o.start(t); o.stop(t+(dur||0.4)+0.05);}catch(e){} }
+function shimmer(){ [880,1175,1568,2093].forEach((f,i)=> setTimeout(()=>blip(f,0.55,'sine',0.09), i*80)); }
+function clack(){ blip(170,0.08,'square',0.2); setTimeout(()=>blip(120,0.09,'square',0.16),70); setTimeout(()=>blip(90,0.1,'square',0.13),140); }
+function whaleSong(){ if(!actx||!audioOn) return; try{ const o=actx.createOscillator(); o.type='sine'; const g=actx.createGain(); g.gain.value=0; o.connect(g); g.connect(amaster); const t=actx.currentTime; o.frequency.setValueAtTime(110,t); o.frequency.exponentialRampToValueAtTime(210,t+1.6); o.frequency.exponentialRampToValueAtTime(96,t+3.6); g.gain.linearRampToValueAtTime(0.15,t+0.6); g.gain.linearRampToValueAtTime(0.0008,t+3.9); o.start(t); o.stop(t+4);}catch(e){} }
+function fanfare(){ [392,523.3,659.3,784].forEach((f,i)=> setTimeout(()=>blip(f,0.5,'triangle',0.15), i*150)); }
+function applyAudio(s){
+  let m='normal';
+  if(s.fx==='gris') m='triste';
+  else if(s.mode==='viaje'||s.mode==='cruce'||s.fx==='temblor') m='tenso';
+  else if(s.fx==='perla'||s.fx==='brilla'||s.fx==='canta'||s.mode==='oscuridad'||s.mode==='circulo') m='magico';
+  else if(s.mode==='fiesta'||s.mode==='fin') m='alegre';
+  mood(m);
+  if(s.fx==='corte') clack();
+  else if(s.fx==='canta') whaleSong();
+  else if(s.fx==='color'||s.mode==='fin') fanfare();
+  else if(s.fx==='brilla'||s.fx==='perla') shimmer();
+}
+
 const GUION=[
  {mode:'titulo', txt:'VERONIX presenta', dur:5000},
  {mode:'titulo', txt:'✨ La Perla de Luz ✨', dur:7000, fx:'perla'},
@@ -750,11 +818,11 @@ function startCredits(){
 function hide(a){ a.set(W()*0.5, H()*1.45, 0.8, 0); }
 
 function applyScene(i){
-  const s=GUION[i]; curScene=s; scene=i; sceneStart=performance.now(); pausedElapsed=0;
+  const s=GUION[i]; curScene=s; scene=i; sceneStart=performance.now(); pausedElapsed=0; sceneToken++;
   const cast=s.cast||ROLES, star=s.star, speaker=s.speaker||s.star;
   let txt=s.txt;
   if(s.mode==='presenta'&&s.present){ const P=PERSONA[s.present]; const kid=actors[s.present]&&actors[s.present].kid; txt=P[0]+' — '+P[1]+'.'+(kid?'   ✏️ dibujado por '+kid:''); }
-  setSub(txt, s.mode);
+  curSubText=txt; setSub(txt, s.mode);
   document.getElementById('cineProg').textContent=(i+1)+' / '+GUION.length;
   const cred=document.getElementById('cineCredits'); if(s.mode!=='creditos') cred.classList.remove('show');
   ROLES.forEach(r=>{ const a=actors[r]; if(a){ a.bob=8; a.talk=0; } });
@@ -777,12 +845,15 @@ function applyScene(i){
   if(showPearl){ cinePearl.x=W()*0.5; cinePearl.y=(s.mode==='fin'||s.mode==='fiesta')?H()*0.16:(s.mode==='circulo'?H()*0.48:H()*0.20); cinePearl.baseScale=(s.mode==='fin')?2.4:(s.mode==='circulo'?1.5:1.2); }
   glowRole=(s.fx==='brilla'||s.fx==='canta'||s.fx==='corte'||s.mode==='oscuridad')?(speaker||star):null;
   ringsOn=(s.fx==='canta');
+  applyAudio(s);
+  speak(curSubText, sceneToken);
 }
 async function startCinema(){
   const btn=document.getElementById('btnCine');
   if(!cineReady){ btn.disabled=true; const old=btn.innerHTML; btn.textContent='Cargando…'; await preloadCine(); btn.disabled=false; btn.innerHTML=old; }
   buildActors(); app.stage.addChild(cinemaLayer);
   cineActive=true; cinePaused=false; document.getElementById('cinePlay').textContent='⏸';
+  audioInit();
   creatureLayer.visible=false; labelLayer.visible=false; cinemaLayer.visible=true;
   document.getElementById('cinema').classList.add('show');
   document.querySelector('.controls').style.display='none';
@@ -790,6 +861,7 @@ async function startCinema(){
 }
 function stopCinema(){
   cineActive=false; cinemaLayer.visible=false; cinePearl.visible=false; cineGlow.visible=false; cineDark.clear(); cineRings.clear();
+  if(synth){ try{ synth.cancel(); }catch(e){} } audioSuspend();
   document.getElementById('cinema').classList.remove('show');
   document.getElementById('cineCredits').classList.remove('show');
   document.querySelector('.controls').style.display='';
@@ -806,7 +878,12 @@ window.__cineTick=function(d){
   if(ringsOn && glowRole && actors[glowRole]){ const a=actors[glowRole]; ringT+=d; for(let k=0;k<3;k++){ const ph=((ringT*0.018)+(k/3))%1; cineRings.lineStyle(3,0x9fffe9,(1-ph)*0.5); cineRings.drawCircle(a.sprite.x,a.sprite.y,40+ph*220);} }
   if(cinePearl.visible){ const b=cinePearl.baseScale||1.2; cinePearl.scale.set(b*(1+Math.sin(performance.now()*0.004)*0.10)); }
   cinemaLayer.x=(curScene&&curScene.fx==='temblor')?(Math.random()-0.5)*8:0;
-  if(!cinePaused && performance.now()-sceneStart > GUION[scene].dur) nextScene();
+  if(!cinePaused){
+    const voz = narrOn && synth && curSubText;
+    const est = curSubText ? curSubText.length*90+3000 : 0;
+    const lim = voz ? Math.max(GUION[scene].dur, est)+4000 : GUION[scene].dur;
+    if(performance.now()-sceneStart > lim) nextScene();
+  }
 };
 document.getElementById('btnCine').onclick=startCinema;
 document.getElementById('cineExit').onclick=stopCinema;
@@ -814,8 +891,13 @@ document.getElementById('cineNext').onclick=nextScene;
 document.getElementById('cinePrev').onclick=prevScene;
 document.getElementById('cinePlay').onclick=()=>{
   cinePaused=!cinePaused; document.getElementById('cinePlay').textContent=cinePaused?'▶':'⏸';
-  if(cinePaused) pausedElapsed=performance.now()-sceneStart; else sceneStart=performance.now()-pausedElapsed;
+  if(cinePaused){ pausedElapsed=performance.now()-sceneStart; if(synth){ try{ synth.cancel(); }catch(e){} } }
+  else { sceneStart=performance.now()-pausedElapsed; sceneToken++; speak(curSubText, sceneToken); }
 };
+document.getElementById('cineNarr').onclick=function(){ narrOn=!narrOn; this.classList.toggle('off',!narrOn);
+  if(!narrOn){ if(synth){ try{ synth.cancel(); }catch(e){} } } else { sceneToken++; speak(curSubText, sceneToken); } };
+document.getElementById('cineAudio').onclick=function(){ audioOn=!audioOn; this.classList.toggle('off',!audioOn);
+  if(actx&&amaster) amaster.gain.setTargetAtTime(audioOn?0.9:0.0, actx.currentTime, 0.3); };
 
 /* ============================================================
    CONEXIÓN EN VIVO (Supabase Realtime) — modo kiosco
