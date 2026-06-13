@@ -431,6 +431,7 @@ app.ticker.add((d)=>{
     }
   }
   for(const c of creatures) c.update(d);
+  if(window.__cineTick) window.__cineTick(d);
 });
 
 /* ============================================================
@@ -567,9 +568,20 @@ document.getElementById('btnClear').onclick=()=>{
    ============================================================ */
 const ROLES=['pez','medusa','estrella','pulpo','caballito','tortuga','cangrejo','ballena'];
 const castByRole={}, looseArt=[];
-function registerCast(role, tex){
-  if(role && ROLES.includes(role)) castByRole[role]=tex; else looseArt.push(tex);
+function registerCast(role, tex, nombre){
+  const e={tex, nombre:(nombre||'').trim()};
+  if(role && ROLES.includes(role)) castByRole[role]=e; else looseArt.push(e);
 }
+const cineTex={}; let cineReady=false;
+function preloadCine(){
+  if(cineReady) return Promise.resolve();
+  if(!window.PERSONAJES){ cineReady=true; return Promise.resolve(); }
+  return Promise.all(ROLES.map(r=>new Promise(res=>{
+    const im=new Image(); im.onload=()=>{ try{ cineTex[r]=PIXI.Texture.from(im); }catch(e){} res(); }; im.onerror=()=>res(); im.src=window.PERSONAJES[r];
+  }))).then(()=>{ cineReady=true; });
+}
+preloadCine();
+const cineNameStyle=new PIXI.TextStyle({fontFamily:'Fredoka, sans-serif',fontSize:26,fontWeight:'700',fill:'#ffffff',stroke:'#063047',strokeThickness:6,dropShadow:true,dropShadowColor:'#021019',dropShadowBlur:4,dropShadowDistance:1});
 
 const cinemaLayer=new PIXI.Container(); cinemaLayer.visible=false; app.stage.addChild(cinemaLayer);
 const cineDark=new PIXI.Graphics(); cinemaLayer.addChild(cineDark);
@@ -580,25 +592,31 @@ const cinePearl=new PIXI.Container(); cinemaLayer.addChild(cinePearl);
 cinePearl.visible=false;
 
 class Actor{
-  constructor(role, texture){
-    this.role=role; this.sprite=new PIXI.Sprite(texture); this.sprite.anchor.set(.5);
-    const tw=texture.width||220, th=texture.height||220; this.fit=150/Math.max(tw,th);
-    this.x=this.tx=W()/2; this.y=this.ty=H()*1.35; this.lastx=this.x; this._f=1;
+  constructor(role, texture, nombre){
+    this.role=role; this.sprite=new PIXI.Sprite(texture||PIXI.Texture.WHITE); this.sprite.anchor.set(.5);
+    this.x=this.tx=W()/2; this.y=this.ty=H()*1.4; this.lastx=this.x; this._f=1;
     this.sc=this.tsc=1; this.av=0; this.tav=0; this.t=Math.random()*100; this._tint=0xffffff;
     this.sprite.alpha=0; cinemaLayer.addChild(this.sprite);
+    this.label=null;
+    if(nombre){ this.label=new PIXI.Text(nombre, cineNameStyle); this.label.anchor.set(.5,0); this.label.alpha=0; cinemaLayer.addChild(this.label); }
   }
+  fit(){ const t=this.sprite.texture, m=Math.max(t.width||1,t.height||1); return m>4?165/m:0.5; }
   set(tx,ty,tsc,tav){ this.tx=tx; this.ty=ty; this.tsc=tsc; this.tav=tav; }
   tint(c){ this._tint=c; }
+  render(){
+    const s=this.fit()*this.sc;
+    this.sprite.scale.set(s*this._f, s);
+    this.sprite.x=this.x; this.sprite.y=this.y+Math.sin(this.t*0.05)*8;
+    this.sprite.rotation=Math.sin(this.t*0.03)*0.05; this.sprite.alpha=this.av; this.sprite.tint=this._tint;
+    if(this.label){ this.label.x=this.x; this.label.y=this.y+Math.abs(this.sprite.height)/2+6; this.label.alpha=this.av; this.label.scale.set(Math.min(1,Math.max(.5,this.sc))); }
+  }
   update(d){
     this.t+=d;
-    this.x+=(this.tx-this.x)*0.05*d; this.y+=(this.ty-this.y)*0.05*d;
-    this.sc+=(this.tsc-this.sc)*0.06*d; this.av+=(this.tav-this.av)*0.08*d;
+    this.x+=(this.tx-this.x)*0.06*d; this.y+=(this.ty-this.y)*0.06*d;
+    this.sc+=(this.tsc-this.sc)*0.07*d; this.av+=(this.tav-this.av)*0.10*d;
     const dx=this.x-this.lastx; this.lastx=this.x;
-    if(Math.abs(dx)>0.3) this._f=dx>0?1:-1;
-    const s=this.fit*this.sc;
-    this.sprite.scale.set(s*this._f, s);
-    this.sprite.x=this.x; this.sprite.y=this.y+Math.sin(this.t*0.04)*7;
-    this.sprite.rotation=Math.sin(this.t*0.03)*0.05; this.sprite.alpha=this.av; this.sprite.tint=this._tint;
+    if(Math.abs(dx)>0.2) this._f=dx>0?1:-1;
+    this.render();
   }
 }
 
@@ -612,21 +630,21 @@ const GUION=[
  {txt:"¡Chac, chac! El cangrejo Tenaza cortó el alga que cerraba la cueva.", dur:8500, cast:ROLES, star:'cangrejo'},
  {txt:"En la oscuridad, la medusa Lumi encendió su luz para guiar a todos.", dur:8500, cast:ROLES, star:'medusa', flag:'dark'},
  {txt:"El pulpo Otto abrió la concha gigante con sus ocho brazos.", dur:8500, cast:ROLES, star:'pulpo'},
- {txt:"Azul cantó una canción mágica… y la Perla de Luz despertó.", dur:8500, cast:ROLES, star:'ballena', flag:'perla'},
- {txt:"La estrella Estela los guió de regreso, y el mar recuperó sus colores.", dur:8500, cast:ROLES, star:'estrella', flag:'perla'},
- {txt:"Juntos, cada uno con su don especial, salvaron el mar.", dur:8000, cast:ROLES, star:null, flag:'fiesta'},
- {txt:"Y colorín colorado… juntos podemos lograr cosas maravillosas.", dur:9000, cast:ROLES, star:null, flag:'perla'},
+ {txt:"Azul cantó una canción mágica… y la Perla de Luz volvió a brillar.", dur:8500, cast:ROLES, star:'ballena', flag:'perla'},
+ {txt:"La estrella Estela los guió de regreso, y el mar recuperó todos sus colores.", dur:8500, cast:ROLES, star:'estrella', flag:'perla'},
+ {txt:"Juntos, cada uno con su don especial, ¡salvaron el mar!", dur:8500, cast:ROLES, star:null, flag:'fiesta'},
+ {txt:"🎉 ¡Y vivieron felices para siempre en el Acuario Mágico! 🎉", dur:13000, cast:ROLES, star:null, flag:'fin'},
 ];
 
 function buildActors(){
-  Object.values(actors).forEach(a=>{ cinemaLayer.removeChild(a.sprite); a.sprite.destroy(); }); actors={};
+  Object.values(actors).forEach(a=>{ cinemaLayer.removeChild(a.sprite); a.sprite.destroy(); if(a.label){cinemaLayer.removeChild(a.label); a.label.destroy();} }); actors={};
   const loose=[...looseArt]; let li=0;
   ROLES.forEach(r=>{
-    let tex;
-    if(castByRole[r]) tex=castByRole[r];
-    else if(li<loose.length) tex=loose[li++];
-    else tex=PIXI.Texture.from(window.PERSONAJES[r]);
-    actors[r]=new Actor(r, tex);
+    let e;
+    if(castByRole[r]) e=castByRole[r];
+    else if(li<loose.length) e=loose[li++];
+    else e={tex: cineTex[r] || (window.PERSONAJES?PIXI.Texture.from(window.PERSONAJES[r]):PIXI.Texture.WHITE), nombre:''};
+    actors[r]=new Actor(r, e.tex, e.nombre);
   });
 }
 function applyScene(i){
@@ -634,21 +652,26 @@ function applyScene(i){
   const sub=document.getElementById('cineSub'); sub.textContent=s.txt;
   sub.style.animation='none'; void sub.offsetWidth; sub.style.animation='';
   document.getElementById('cineProg').textContent=(i+1)+' / '+GUION.length;
+  const festivo=(s.flag==='fiesta'||s.flag==='fin');
   ROLES.forEach(r=>{
-    const a=actors[r];
-    if(!s.cast.includes(r)){ a.set(a.tx, H()*1.35, 0.8, 0); return; }
-    if(s.flag==='fiesta'){ const k=s.cast.indexOf(r), m=s.cast.length;
-      a.set(W()*(0.12+0.76*(k/(m-1))), H()*(0.32+0.30*Math.sin(k*1.7)), 0.95, 1);
-    } else if(r===s.star){ a.set(W()*0.5, H()*0.40, 1.55, 1);
+    const a=actors[r]; if(!a) return;
+    if(!s.cast.includes(r)){ a.set(W()*0.5, H()*1.4, 0.8, 0); return; }
+    if(festivo){ const k=s.cast.indexOf(r), m=s.cast.length;
+      a.set(W()*(0.10+0.80*(m<=1?0.5:k/(m-1))), H()*(0.44+0.20*Math.sin(k*1.6)), 0.92, 1);
+    } else if(r===s.star){ a.set(W()*0.5, H()*0.42, 1.5, 1);
     } else { const o=s.cast.filter(x=>x!==s.star); const k=o.indexOf(r), m=o.length;
-      a.set(W()*(0.13+0.74*(m<=1?0.5:k/(m-1))), H()*0.68, 0.85, 1); }
+      a.set(W()*(0.12+0.76*(m<=1?0.5:k/(m-1))), H()*0.70, 0.82, 1); }
   });
-  const gris=s.flag==='gris'; ROLES.forEach(r=> actors[r].tint(gris?0x9aa6ad:0xffffff));
-  cineDark.clear(); if(s.flag==='dark'){ cineDark.beginFill(0x021019,0.76).drawRect(0,0,W(),H()).endFill(); }
-  cinePearl.visible=(s.flag==='perla'); if(s.flag==='perla'){ cinePearl.x=W()*0.5; cinePearl.y=H()*0.40; }
+  const gris=s.flag==='gris'; ROLES.forEach(r=> actors[r]&&actors[r].tint(gris?0x9aa6ad:0xffffff));
+  cineDark.clear(); if(s.flag==='dark'){ cineDark.beginFill(0x021019,0.74).drawRect(0,0,W(),H()).endFill(); }
+  const showPearl=(s.flag==='perla'||festivo); cinePearl.visible=showPearl;
+  if(showPearl){ cinePearl.x=W()*0.5; cinePearl.y=festivo?H()*0.17:(s.star?H()*0.42:H()*0.18); cinePearl.baseScale=(s.flag==='fin')?2.4:1.3; }
 }
-function startCinema(){
-  buildActors(); cineActive=true; cinePaused=false;
+async function startCinema(){
+  const btn=document.getElementById('btnCine');
+  if(!cineReady){ btn.disabled=true; const old=btn.innerHTML; btn.textContent='Cargando…'; await preloadCine(); btn.disabled=false; btn.innerHTML=old; }
+  buildActors(); app.stage.addChild(cinemaLayer);
+  cineActive=true; cinePaused=false;
   document.getElementById('cinePlay').textContent='⏸';
   creatureLayer.visible=false; labelLayer.visible=false; cinemaLayer.visible=true;
   document.getElementById('cinema').classList.add('show');
@@ -663,12 +686,12 @@ function stopCinema(){
 }
 function nextScene(){ if(scene<GUION.length-1) applyScene(scene+1); else stopCinema(); }
 function prevScene(){ if(scene>0) applyScene(scene-1); }
-app.ticker.add((d)=>{
+window.__cineTick=function(d){
   if(!cineActive) return;
   for(const r of ROLES) if(actors[r]) actors[r].update(d);
-  if(cinePearl.visible) cinePearl.scale.set(1+Math.sin(performance.now()*0.004)*0.12);
+  if(cinePearl.visible){ const b=cinePearl.baseScale||1.3; cinePearl.scale.set(b*(1+Math.sin(performance.now()*0.004)*0.10)); }
   if(!cinePaused && performance.now()-sceneStart > GUION[scene].dur) nextScene();
-});
+};
 document.getElementById('btnCine').onclick=startCinema;
 document.getElementById('cineExit').onclick=stopCinema;
 document.getElementById('cineNext').onclick=nextScene;
@@ -713,7 +736,7 @@ function setConn(state){
       const img=new Image(); img.crossOrigin='anonymous';
       img.onload=()=>{ const tex=PIXI.Texture.from(img);
         addCreature(tex, W()*0.5+(Math.random()-.5)*W()*0.42, H()*0.28+Math.random()*H()*0.44, nombre);
-        registerCast(p.new.personaje||null, tex); };
+        registerCast(p.new.personaje||null, tex, nombre); };
       img.onerror=()=>console.warn('No se pudo cargar la imagen remota:', url);
       img.src=url;
     })
