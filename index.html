@@ -13,6 +13,7 @@
 <script src="config.js"></script>
 <script src="personajes.js"></script>
 <script src="personajes-espacio.js"></script>
+<script src="personajes-oeste.js"></script>
 <style>
   :root{
     --abyss:#02141f; --deep:#063047; --mid:#0a5a7a; --surface:#1593b0;
@@ -30,6 +31,7 @@
   }
   .rays{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:1;mix-blend-mode:screen;opacity:.42}
   body.espacio .rays{display:none}
+  body.oeste .rays{display:none}
   .ray{position:absolute;top:-25%;width:20vw;height:150vh;
     background:linear-gradient(180deg, rgba(255,255,255,.26), rgba(255,255,255,0) 72%);
     filter:blur(14px);transform-origin:top center}
@@ -660,7 +662,7 @@ const reef=new PIXI.Container(); cineBg.addChild(reef);
 const drift=new PIXI.Container(); cineBg.addChild(drift);
 const cave=new PIXI.Container(); cineBg.addChild(cave);
 let bgMode='arrecife', bgT=0, bgEnter=0;
-function buildScape(){ if(TEMA==='espacio') buildScapeEspacio(); else buildScapeMar(); }
+function buildScape(){ if(TEMA==='espacio') buildScapeEspacio(); else if(TEMA==='oeste') buildScapeOeste(); else buildScapeMar(); }
 function buildScapeMar(){
   reef.removeChildren(); drift.removeChildren(); cave.removeChildren();
   const w=W(), h=H();
@@ -699,7 +701,7 @@ function buildScapeEspacio(){
   reef.visible=true; drift.visible=false; cave.visible=false; cave.alpha=1; cave.scale.set(1);
 }
 function layoutInit(){ reef.visible=true; drift.visible=false; cave.visible=false; cave.scale.set(1); cave.alpha=1; }
-function setScape(mode){ if(TEMA==='espacio') setScapeEspacio(mode); else setScapeMar(mode); }
+function setScape(mode){ if(TEMA==='espacio') setScapeEspacio(mode); else if(TEMA==='oeste') setScapeOeste(mode); else setScapeMar(mode); }
 function setScapeMar(mode){
   bgMode=mode; const w=W(),h=H();
   const tints={ arrecife:[0x0a4f6e,0.0], apagado:[0x6b7780,0.5], viaje:[0x083047,0.22], corriente:[0x0a3a52,0.3], cueva:[0x010d16,0.72], entrada:[0x021621,0.45], fiesta:[0xffd86b,0.06] };
@@ -719,6 +721,45 @@ function setScapeEspacio(mode){
   reef.children.forEach(c=>{ if(c.kind==='planeta') c.visible=(mode==='planeta'); else if(c.kind==='luna') c.visible=(mode==='luna'); else if(c.kind==='galaxia') c.visible=(mode==='mirador'); else c.visible=true; });
   drift.visible=(mode==='viaje'||mode==='lluvia');
   cave.visible=(mode==='polvo');
+}
+function buildScapeOeste(){
+  reef.removeChildren(); drift.removeChildren(); cave.removeChildren();
+  const w=W(),h=H(); const ground=h*0.72;
+  const fl=new PIXI.Graphics(); fl.kind='terreno'; fl.beginFill(0xe3b873,1).drawRect(0,ground,w,h-ground).endFill(); fl.beginFill(0xd6a45c,1).drawRect(0,ground,w,16).endFill(); reef.addChild(fl);
+  [[0.13,170,110],[0.5,232,150],[0.83,150,96]].forEach(([px,bw,bh])=>{ const g=new PIXI.Graphics(); g.kind='terreno'; const x=w*px; g.beginFill(0xb8531f,1).drawRoundedRect(x-bw/2,ground-bh,bw,bh,20).endFill(); g.beginFill(0x9c4419,1).drawRect(x-bw/2,ground-bh*0.34,bw,9).endFill(); reef.addChild(g); });
+  [[0.30,0.92],[0.68,0.86]].forEach(([px,sc])=>{ const g=new PIXI.Graphics(); g.kind='terreno'; const x=w*px; g.beginFill(0x4f9a3d,1).drawRoundedRect(x-12*sc,ground-120*sc,24*sc,120*sc,12).drawRoundedRect(x-44*sc,ground-90*sc,20*sc,46*sc,10).drawRoundedRect(x+24*sc,ground-100*sc,20*sc,52*sc,10).endFill(); reef.addChild(g); });
+  [0.16,0.34,0.52,0.72,0.86].forEach((px,i)=>{ const g=new PIXI.Graphics(); g.kind='pueblo'; const x=w*px,bw=90+(i%2)*26,bh=120+(i%3)*30;
+    g.beginFill([0x8b5a2b,0xa6713a,0x7a4a25][i%3],1).drawRect(x-bw/2,ground-bh,bw,bh).endFill();
+    g.beginFill(0x5a3a1a,1).moveTo(x-bw/2-8,ground-bh).lineTo(x,ground-bh-40).lineTo(x+bw/2+8,ground-bh).closePath().endFill();
+    g.beginFill(0x3a2a14,1).drawRect(x-14,ground-46,28,46).endFill(); reef.addChild(g); });
+  const cl=new PIXI.Graphics(); cl.kind='canon'; cl.beginFill(0xa8431a,1); cl.moveTo(0,0); cl.lineTo(w*0.26,0); for(let k=0;k<=8;k++){const t=k/8; cl.lineTo(w*(0.26-0.10*Math.sin(t*Math.PI)),h*t);} cl.lineTo(0,h); cl.closePath(); cl.endFill(); cl.visible=false; reef.addChild(cl);
+  const cr=new PIXI.Graphics(); cr.kind='canon'; cr.beginFill(0xa8431a,1); cr.moveTo(w,0); cr.lineTo(w*0.74,0); for(let k=0;k<=8;k++){const t=k/8; cr.lineTo(w*(0.74+0.10*Math.sin(t*Math.PI)),h*t);} cr.lineTo(w,h); cr.closePath(); cr.endFill(); cr.visible=false; reef.addChild(cr);
+  const rv=new PIXI.Graphics(); rv.kind='rio'; rv.beginFill(0x3aa6d6,0.92).drawRect(0,h*0.80,w,h*0.20).endFill(); rv.beginFill(0x8fd3ee,0.7).drawRect(0,h*0.80,w,8).endFill(); rv.visible=false; reef.addChild(rv);
+  const mt=new PIXI.Graphics(); mt.kind='meta';
+  mt.beginFill(0x5a3a1a,1).drawRect(w*0.16-8,ground-220,16,220).drawRect(w*0.84-8,ground-220,16,220).endFill();
+  mt.lineStyle(10,0x1f2440,1).moveTo(w*0.16,ground-214).lineTo(w*0.84,ground-214); mt.lineStyle(0);
+  const cols=[0xff5d5d,0xffd23f,0x4dabf7,0x69db7c];
+  for(let i=0;i<14;i++){ const x=w*0.16+(w*0.68)*(i/13); mt.beginFill(cols[i%4],1).moveTo(x,ground-214).lineTo(x+18,ground-214).lineTo(x+9,ground-190).closePath().endFill(); }
+  mt.visible=false; reef.addChild(mt);
+  for(let i=0;i<6;i++){ const g=new PIXI.Graphics(); const rr=26+((i*17)%22); g.lineStyle(5,0x9c6b34,0.9); g.drawCircle(0,0,rr); g.moveTo(-rr,0).lineTo(rr,0); g.moveTo(0,-rr).lineTo(0,rr); g.moveTo(-rr*0.7,-rr*0.7).lineTo(rr*0.7,rr*0.7); g.moveTo(-rr*0.7,rr*0.7).lineTo(rr*0.7,-rr*0.7); g.x=(i/6)*w*1.4; g.y=ground-rr-4; g.spd=0.8+(i%3)*0.3; drift.addChild(g); }
+  for(let i=0;i<11;i++){ const g=new PIXI.Graphics(); g.beginFill(0xd9b88a,0.5).drawEllipse(0,0,190+Math.random()*150,120+Math.random()*110).endFill(); g.x=Math.random()*w; g.y=Math.random()*h; g.spd=0.4+Math.random()*0.6; cave.addChild(g); }
+  cave.pivot.set(0,0); cave.position.set(0,0);
+  reef.visible=true; drift.visible=false; cave.visible=false; cave.alpha=1; cave.scale.set(1);
+}
+function setScapeOeste(mode){
+  bgMode=mode; const w=W(),h=H();
+  const tints={ polvareda:[0x8a6b3a,0.48], fiesta:[0xffd86b,0.05], canon:[0x7a2f12,0.10] };
+  const tt=tints[mode]; bgTint.clear(); if(tt) bgTint.beginFill(tt[0],tt[1]).drawRect(0,0,w,h).endFill();
+  reef.visible=true;
+  reef.children.forEach(c=>{ const k=c.kind;
+    if(k==='pueblo') c.visible=(mode==='pueblo'||mode==='meta'||mode==='fiesta');
+    else if(k==='canon') c.visible=(mode==='canon');
+    else if(k==='rio') c.visible=(mode==='rio');
+    else if(k==='meta') c.visible=(mode==='meta');
+    else c.visible=true;
+  });
+  drift.visible=(mode==='desierto'||mode==='meta'||mode==='canon');
+  cave.visible=(mode==='polvareda');
 }
 
 class Actor{
@@ -975,13 +1016,78 @@ const GUION_ESPACIO=[
  {mode:'creditos', txt:'', dur:22000},
 ];
 
+/* ===================== MUNDO OESTE: "La Gran Carrera de Polvo Dorado" ===================== */
+const ROLES_OESTE=['vaquero','caballo','sheriff','cactus','aguila','coyote','toro','tren'];
+const PERSONA_OESTE={
+  vaquero:['Tom','el vaquero más valiente del pueblo'],
+  caballo:['Trueno','el caballo más veloz de la pradera'],
+  sheriff:['Justo','el sheriff que cuida a todos'],
+  cactus:['Pinchón','el cactus guardián del desierto'],
+  aguila:['Alas','el águila que vigila desde el cielo'],
+  coyote:['Aullido','el coyote más astuto del oeste'],
+  toro:['Cuernos','el toro más fuerte de la pradera'],
+  tren:['Chucu','la locomotora resoplona'],
+};
+const GUION_OESTE=[
+ {mode:'titulo', txt:'VERONIX presenta', dur:5000},
+ {mode:'titulo', txt:'🤠 La Gran Carrera de Polvo Dorado 🌵', dur:7000, fx:'perla', bg:'pueblo'},
+ {mode:'titulo', txt:'Una aventura en el Viejo Oeste', dur:6000, bg:'pueblo'},
+ {mode:'titulo', txt:'Pero antes de la salida… conozcamos a los corredores.', dur:6500, bg:'pueblo'},
+ {mode:'presenta', present:'vaquero', dur:11000},
+ {mode:'presenta', present:'caballo', dur:11000},
+ {mode:'presenta', present:'sheriff', dur:11000},
+ {mode:'presenta', present:'cactus', dur:11000},
+ {mode:'presenta', present:'aguila', dur:11000},
+ {mode:'presenta', present:'coyote', dur:11000},
+ {mode:'presenta', present:'toro', dur:11000},
+ {mode:'presenta', present:'tren', dur:11000},
+ {mode:'grupo', txt:'En el pueblo de Polvo Dorado, hoy era el gran día: ¡la carrera anual!', dur:9000, bg:'pueblo', star:'vaquero'},
+ {mode:'solo', star:'sheriff', speaker:'sheriff', txt:'«La regla es una sola: lleguen sanos a la meta», dijo el sheriff Justo.', dur:9500, bg:'pueblo', fx:'brilla'},
+ {mode:'grupo', txt:'Todos se acomodaron en la línea de salida, emocionadísimos.', dur:8500, bg:'pueblo', star:'sheriff'},
+ {mode:'solo', star:'sheriff', speaker:'sheriff', txt:'«¡En sus marcas… listos… YA!»', dur:6500, bg:'pueblo', fx:'corte'},
+ {mode:'viaje', txt:'¡Arrancaron todos a toda velocidad por el desierto! 💨', dur:9000, bg:'desierto', fx:'temblor', star:'caballo'},
+ {mode:'solo', star:'caballo', speaker:'caballo', txt:'Trueno, el caballo veloz, tomó la delantera al galope.', dur:9000, bg:'desierto'},
+ {mode:'cruce', star:'coyote', speaker:'coyote', txt:'Pero Aullido, el coyote astuto, lo alcanzaba a paso ligero.', dur:9000, bg:'desierto'},
+ {mode:'grupo', txt:'Y atrás, resoplando, venía la locomotora Chucu: ¡chucu-chucu!', dur:8500, bg:'desierto', star:'tren'},
+ {mode:'solo', star:'cactus', speaker:'cactus', txt:'El sol picaba fuerte. Pinchón les dio sombra y un sorbo de agua fresca.', dur:9500, bg:'desierto', fx:'brilla'},
+ {mode:'grupo', txt:'De pronto… ¡PUM! El toro Cuernos tropezó y cayó en un hoyo.', dur:9000, bg:'desierto', fx:'temblor', star:'toro'},
+ {mode:'solo', star:'toro', speaker:'toro', txt:'«¡Ay! No puedo salir solo de aquí…», dijo Cuernos, triste.', dur:9000, bg:'desierto'},
+ {mode:'solo', star:'caballo', speaker:'caballo', txt:'Trueno iba ganando… pero frenó. ¿Seguir, o ayudar a su amigo?', dur:9500, bg:'desierto'},
+ {mode:'grupo', txt:'Trueno regresó y, con un fuerte tirón, sacó a Cuernos del hoyo.', dur:9000, bg:'desierto', fx:'brilla', star:'caballo'},
+ {mode:'grupo', txt:'Y siguieron juntos, ahora hacia el gran cañón rojo.', dur:8500, bg:'canon', star:'caballo'},
+ {mode:'viaje', txt:'El cañón era estrecho, alto y lleno de rocas.', dur:8500, bg:'canon'},
+ {mode:'solo', star:'aguila', speaker:'aguila', txt:'Alas voló bien alto y desde el cielo les mostró el camino seguro.', dur:9500, bg:'canon', fx:'brilla'},
+ {mode:'grupo', txt:'Uno detrás de otro, cruzaron el cañón sin tropezar.', dur:8500, bg:'canon', star:'aguila'},
+ {mode:'grupo', txt:'Pero al salir encontraron un río ancho… ¡y sin puente!', dur:9000, bg:'rio', star:'vaquero'},
+ {mode:'solo', star:'tren', speaker:'tren', txt:'«¡Yo los cruzo!» Chucu estiró sus vagones de orilla a orilla.', dur:9500, bg:'rio', fx:'corte'},
+ {mode:'grupo', txt:'Y todos cruzaron el río caminando sobre la locomotora. ¡Chucu era el puente!', dur:9500, bg:'rio', fx:'brilla', star:'tren'},
+ {mode:'grupo', txt:'De repente, el viento sopló fuerte y una gran polvareda los envolvió.', dur:9000, bg:'polvareda', fx:'dark', star:'vaquero'},
+ {mode:'grupo', txt:'No se veía nada. La arena giraba por todos lados.', dur:8500, bg:'polvareda', fx:'temblor', star:'vaquero'},
+ {mode:'solo', star:'sheriff', speaker:'sheriff', txt:'Justo hizo brillar su placa de estrella para que nadie se perdiera.', dur:9500, bg:'polvareda', fx:'brilla'},
+ {mode:'solo', star:'coyote', speaker:'coyote', txt:'Y Aullido olfateó el aire para encontrar el camino correcto.', dur:9000, bg:'polvareda', fx:'brilla'},
+ {mode:'grupo', txt:'Tomados de la mano, muy juntitos, cruzaron la polvareda sin miedo.', dur:9000, bg:'polvareda', star:'coyote'},
+ {mode:'viaje', txt:'Y al despejarse el polvo… ¡vieron la meta a lo lejos!', dur:8500, bg:'meta', fx:'brilla', star:'vaquero'},
+ {mode:'grupo', txt:'Todos estaban cansados, llenos de polvo… pero juntos.', dur:8500, bg:'meta', star:'vaquero'},
+ {mode:'solo', star:'vaquero', speaker:'vaquero', txt:'«Nadie llegó solo hasta aquí. ¡Crucemos TODOS juntos!», dijo Tom.', dur:9500, bg:'meta', fx:'brilla'},
+ {mode:'grupo', txt:'Se tomaron de las manos, de los cascos y de las patas.', dur:8000, bg:'meta', star:'vaquero'},
+ {mode:'circulo', txt:'Y cruzaron la meta… ¡TODOS al mismo tiempo! 🎉', dur:9000, bg:'meta', fx:'perla', star:'vaquero'},
+ {mode:'grupo', txt:'El pueblo entero estalló en aplausos por todos los corredores.', dur:9000, bg:'pueblo', fx:'color', star:'sheriff'},
+ {mode:'fiesta', txt:'Esa tarde hubo la fiesta más grande de Polvo Dorado. 🎶', dur:9000, bg:'fiesta', fx:'color', star:'vaquero'},
+ {mode:'solo', star:'vaquero', speaker:'vaquero', txt:'«Ganamos todos», dijo Tom, «porque nos ayudamos en el camino.»', dur:9500, bg:'fiesta', fx:'brilla'},
+ {mode:'grupo', txt:'Y así aprendieron que juntos siempre se llega más lejos.', dur:9000, bg:'pueblo', star:'vaquero'},
+ {mode:'fin', txt:'🌵 ¡La Gran Carrera de Polvo Dorado! 🌵', dur:11000, fx:'perla', bg:'meta'},
+ {mode:'titulo', txt:'Lo importante no es llegar primero, sino llegar juntos.', dur:9000, bg:'pueblo'},
+ {mode:'creditos', txt:'', dur:22000},
+];
+
 /* ===================== SISTEMA DE MUNDOS ===================== */
 const BG_MAR='radial-gradient(130% 95% at 50% -12%, rgba(120,240,255,.16), transparent 46%), linear-gradient(180deg,#0a5a7a 0%,#08415c 26%,#052a3d 62%,#021019 100%)';
 const BG_ESPACIO='radial-gradient(120% 90% at 30% -8%, rgba(155,120,255,.30), transparent 50%), radial-gradient(90% 80% at 80% 20%, rgba(80,170,255,.16), transparent 55%), linear-gradient(180deg,#1a1140 0%,#120b2e 40%,#0a0720 70%,#05030f 100%)';
+const BG_OESTE='radial-gradient(circle at 76% 20%, rgba(255,225,140,.95), rgba(255,205,110,.35) 16%, transparent 30%), linear-gradient(180deg,#6db6d6 0%,#bfe0e6 30%,#f3cf8e 60%,#e3a85c 80%,#c97f3e 100%)';
 const MUNDOS={
   acuario:{ nombre:'Acuario Mágico', emoji:'🐠', sub:'Peces y criaturas del mar', roles:ROLES.slice(), persona:PERSONA, guion:GUION_ACUARIO, fallback:(window.PERSONAJES||{}), tema:'mar', pearl:0x2ee6cf, bg:BG_MAR, listo:true },
   espacio:{ nombre:'Viaje al Espacio', emoji:'🚀', sub:'Cohetes, planetas y estrellas', roles:ROLES_ESPACIO, persona:PERSONA_ESPACIO, guion:GUION_ESPACIO, fallback:(window.PERSONAJES_ESPACIO||{}), tema:'espacio', pearl:0xffd23f, bg:BG_ESPACIO, listo:true },
-  oeste:{ nombre:'Viejo Oeste', emoji:'🤠', sub:'Próximamente', listo:false },
+  oeste:{ nombre:'Viejo Oeste', emoji:'🤠', sub:'Vaqueros, caballos y desierto', roles:ROLES_OESTE, persona:PERSONA_OESTE, guion:GUION_OESTE, fallback:(window.PERSONAJES_OESTE||{}), tema:'oeste', pearl:0xffd23f, bg:BG_OESTE, listo:true },
   parque:{ nombre:'El Parque', emoji:'🌳', sub:'Próximamente', listo:false },
 };
 let MUNDO_ID='acuario';
@@ -995,8 +1101,9 @@ function cargarMundo(id){
   setPearlColor(m.pearl||0xffffff);
   document.body.style.background=m.bg;
   document.body.classList.toggle('espacio', m.tema==='espacio');
-  const esp=(m.tema==='espacio');
-  plantLayer.visible=!esp; planktonLayer.visible=!esp;
+  document.body.classList.toggle('oeste', m.tema==='oeste');
+  const noMar=(m.tema!=='mar');
+  plantLayer.visible=!noMar; planktonLayer.visible=!noMar;
   buildScape();
   preloadCine();
 }
@@ -1055,7 +1162,7 @@ function applyScene(i){
   let bg=s.bg;
   if(!bg){ if(s.fx==='gris') bg='apagado'; else if(s.mode==='cruce') bg='corriente'; else if(s.mode==='viaje') bg='viaje'; else if(s.fx==='color'||s.mode==='fiesta'||s.mode==='fin') bg='fiesta'; else if(s.fx==='dark'||s.mode==='oscuridad') bg='cueva'; else bg='arrecife'; }
   setScape(bg);
-  ROLES.forEach(r=>{ if(!actors[r])return; let tc=0xffffff; if(s.fx==='gris')tc=0x9aa6ad; else if(bg==='cueva'||bg==='entrada'||bg==='polvo'){ tc=(r===(speaker||star))?0xffffff:0x5b6b79; } actors[r].tint(tc); });
+  ROLES.forEach(r=>{ if(!actors[r])return; let tc=0xffffff; if(s.fx==='gris')tc=0x9aa6ad; else if(bg==='cueva'||bg==='entrada'||bg==='polvo'||bg==='polvareda'){ tc=(r===(speaker||star))?0xffffff:0x5b6b79; } actors[r].tint(tc); });
   cineDark.clear();
   const showPearl=(s.fx==='perla'||s.mode==='fin'); cinePearl.visible=showPearl;
   if(showPearl){ cinePearl.x=W()*0.5; cinePearl.y=(s.mode==='fin'||s.mode==='fiesta')?H()*0.16:(s.mode==='circulo'?H()*0.48:H()*0.20); cinePearl.baseScale=(s.mode==='fin')?2.4:(s.mode==='circulo'?1.5:1.2); }
@@ -1106,6 +1213,10 @@ window.__cineTick=function(d){
     if(bgMode==='viaje'||bgMode==='lluvia'){ const sp=(bgMode==='lluvia'?3.2:1.9); drift.children.forEach(g=>{ g.x-=sp*g.spd*d; if(g.x<-110) g.x=W()+110; }); }
     if(bgMode==='polvo'){ cave.children.forEach(g=>{ g.x-=g.spd*d*0.6; if(g.x<-220) g.x=W()+220; }); }
     cineBg.y=0;
+  } else if(TEMA==='oeste'){
+    if(drift.visible){ drift.children.forEach(g=>{ g.x-=2.2*g.spd*d; g.rotation+=0.006*d; if(g.x<-90){ g.x=W()+90; } }); }
+    if(bgMode==='polvareda'){ cave.children.forEach(g=>{ g.x-=g.spd*d*0.8; if(g.x<-260) g.x=W()+260; }); }
+    cineBg.y=0;
   } else {
   if(bgMode==='viaje'||bgMode==='corriente'){ const sp=(bgMode==='corriente'?3.4:1.9); drift.children.forEach(g=>{ g.x-=sp*g.spd*d; if(g.x<-90) g.x=W()+90; }); }
   if(bgMode==='entrada'){ bgEnter=Math.min(1,bgEnter+0.006*d); cave.scale.set(0.5+0.5*bgEnter); cave.alpha=bgEnter; }
@@ -1136,6 +1247,7 @@ function elegirMundo(id){
   const bs=document.querySelector('.brand span'); if(bs) bs.textContent='· '+m.nombre;
   const eH=document.querySelector('#empty h1'), eP=document.querySelector('#empty p');
   if(m.tema==='espacio'){ if(eH) eH.innerHTML='El espacio espera<br>tu <em>primer dibujo</em>'; if(eP) eP.textContent='Colorea tu personaje, captúralo y míralo volar entre las estrellas.'; }
+  else if(m.tema==='oeste'){ if(eH) eH.innerHTML='El desierto espera<br>tu <em>primer dibujo</em>'; if(eP) eP.textContent='Colorea tu personaje, captúralo y míralo correr por el Viejo Oeste.'; }
   else { if(eH) eH.innerHTML='El océano espera<br>tu <em>primer dibujo</em>'; if(eP) eP.textContent='Dibuja sobre papel, captúralo y míralo cobrar vida.'; }
 }
 document.getElementById('btnWorld').addEventListener('click',()=>{ document.getElementById('worldPicker').classList.remove('hidden'); });
