@@ -47,6 +47,8 @@
   .chip{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 3px;border-radius:11px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);cursor:pointer;font-family:"Fredoka";font-size:10px;color:#cdeef0}
   .chip .em{font-size:20px;line-height:1}
   .chip.sel{border-color:var(--biolum);background:rgba(46,230,207,.18)}
+  .detectbtn{width:100%;margin:6px 0 9px;padding:11px;border-radius:12px;border:1px solid rgba(46,230,207,.4);background:rgba(46,230,207,.12);color:#bfeee8;font-family:"Fredoka";font-weight:600;font-size:14px;cursor:pointer}
+  .detectbtn:disabled{opacity:.5}
   .row{display:flex;gap:10px;margin-top:6px}
   .btn{flex:1;font-family:"Fredoka";font-weight:600;font-size:16px;border:none;cursor:pointer;padding:14px;border-radius:14px;background:linear-gradient(135deg,#3df0d8,#1bbfae);color:#04202b}
   .btn.ghost{background:rgba(255,255,255,.1);color:#dff7f4;border:1px solid rgba(255,255,255,.16);flex:.55}
@@ -99,7 +101,8 @@
           <input type="text" id="nombre" maxlength="16" placeholder="Ej: Mateo" autocomplete="off">
         </div>
         <div class="field">
-          <label>¿Qué animal coloreó? <span id="persVal">—</span></label>
+          <label>¿Qué dibujó? <span id="persVal">—</span></label>
+          <button type="button" id="btnDetect" class="detectbtn">🔍 Detectar con IA</button>
           <div class="persgrid" id="persgrid"></div>
         </div>
         <div class="row">
@@ -240,6 +243,7 @@ function renderReview(){
   finalCanvas=sharpen(baseCropped, amount);
   prev.width=finalCanvas.width; prev.height=finalCanvas.height;
   const ctx=prev.getContext('2d'); ctx.clearRect(0,0,prev.width,prev.height); ctx.drawImage(finalCanvas,0,0);
+  if(!autoDetectDone){ autoDetectDone=true; runDetect(false); }
   const v=parseInt(sharpSlider.value,10); sharpVal.textContent = v<20?'suave':v<55?'media':v<80?'nítida':'máxima';
   const cv=parseInt(cutSlider.value,10); cutVal.textContent = cv<55?'suave':cv<95?'auto':'fuerte';
 }
@@ -248,13 +252,44 @@ cutSlider.addEventListener('change', recompute);
 document.getElementById('rotL').onclick=()=>{ if(rawResized){ rawResized=rotate90(rawResized,false); recompute(); } };
 document.getElementById('rotR').onclick=()=>{ if(rawResized){ rawResized=rotate90(rawResized,true); recompute(); } };
 
-// selector de personaje (para el modo Cine)
+// selector + reconocimiento por IA (para el modo Cine)
 const PERS=[['pez','🐟','Pez'],['medusa','🪼','Medusa'],['estrella','⭐','Estrella'],['pulpo','🐙','Pulpo'],['caballito','🐴','Caballito'],['tortuga','🐢','Tortuga'],['cangrejo','🦀','Cangrejo'],['ballena','🐋','Ballena']];
-let personajeSel=null;
+const EMOJI={pez:'🐟',medusa:'🪼',estrella:'⭐',pulpo:'🐙',caballito:'🐴',tortuga:'🐢',cangrejo:'🦀',ballena:'🐋',elefante:'🐘',perro:'🐶',gato:'🐱',leon:'🦁',tigre:'🐯',dinosaurio:'🦖',mariposa:'🦋',pajaro:'🐦',conejo:'🐰',rana:'🐸',caballo:'🐴',vaca:'🐮',oso:'🐻',mono:'🐵',tiburon:'🦈',delfin:'🐬',pinguino:'🐧',serpiente:'🐍',pollo:'🐤',pato:'🦆',abeja:'🐝'};
+let animalSel=null, autoDetectDone=false;
 const pg=document.getElementById('persgrid');
+function setAnimal(val){ animalSel=val||null; pg.querySelectorAll('.chip').forEach(x=>x.classList.toggle('sel', x.dataset.id===animalSel));
+  const pv=document.getElementById('persVal'); if(!animalSel){ pv.textContent='—'; return; }
+  const k=PERS.find(p=>p[0]===animalSel); pv.textContent=(EMOJI[animalSel]||'🐾')+' '+(k?k[2]:(animalSel.charAt(0).toUpperCase()+animalSel.slice(1))); }
 PERS.forEach(([id,em,nm])=>{ const c=document.createElement('div'); c.className='chip'; c.dataset.id=id; c.innerHTML='<span class="em">'+em+'</span>'+nm;
-  c.onclick=()=>{ personajeSel=(personajeSel===id)?null:id; pg.querySelectorAll('.chip').forEach(x=>x.classList.remove('sel')); if(personajeSel)c.classList.add('sel'); document.getElementById('persVal').textContent=personajeSel?nm:'—'; };
-  pg.appendChild(c); });
+  c.onclick=()=>setAnimal(animalSel===id?null:id); pg.appendChild(c); });
+
+async function detectAnimal(canvas){
+  const key=(typeof GEMINI_API_KEY!=='undefined' && GEMINI_API_KEY)?GEMINI_API_KEY:'';
+  if(!key || !canvas) return null;
+  const b64=canvas.toDataURL('image/jpeg',0.85).split(',')[1];
+  const body={contents:[{parts:[
+    {text:"Mira este dibujo hecho por un niño pequeño. Dime SOLO qué animal es, en español, una sola palabra en minúscula y singular (ej: pez, pulpo, tortuga, medusa, estrella, caballito, cangrejo, ballena, elefante, perro, gato, dinosaurio, mariposa, leon, tiburon). Si de verdad no parece ningún animal, responde: criatura. Solo la palabra, sin punto ni explicación."},
+    {inline_data:{mime_type:'image/jpeg',data:b64}}]}],
+    generationConfig:{temperature:0,maxOutputTokens:10}};
+  const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+encodeURIComponent(key),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(!r.ok) throw new Error('IA '+r.status);
+  const j=await r.json();
+  let parts=(((j.candidates||[])[0]||{}).content||{}).parts||[]; let t=(parts[0]||{}).text||'';
+  t=t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z ]/g,'').trim().split(/\s+/)[0];
+  return t||null;
+}
+async function runDetect(manual){
+  const pv=document.getElementById('persVal'), btn=document.getElementById('btnDetect');
+  if(typeof GEMINI_API_KEY==='undefined' || !GEMINI_API_KEY){ if(manual) pv.textContent='⚠️ Falta API key (config.js)'; return; }
+  if(!finalCanvas) return;
+  pv.textContent='🤖 Detectando…'; if(btn) btn.disabled=true;
+  try{ const a=await detectAnimal(finalCanvas);
+    if(a && a!=='criatura') setAnimal(a);
+    else pv.textContent='🐾 No estoy seguro, elígelo tú';
+  }catch(e){ pv.textContent='⚠️ No se pudo detectar'; }
+  finally{ if(btn) btn.disabled=false; }
+}
+document.getElementById('btnDetect').onclick=()=>runDetect(true);
 
 /* ---------- Tomar foto ---------- */
 document.getElementById('shoot').onclick=()=>{
@@ -262,6 +297,7 @@ document.getElementById('shoot').onclick=()=>{
   const cap=document.createElement('canvas'); cap.width=video.videoWidth; cap.height=video.videoHeight;
   cap.getContext('2d').drawImage(video,0,0);
   rawResized=resizeCanvas(cap, 900);
+  autoDetectDone=false;
   dock.classList.add('hide'); review.classList.add('show');
   recompute();
 };
@@ -276,7 +312,7 @@ document.getElementById('send').onclick=()=>{
       const name=Date.now()+'-'+Math.random().toString(36).slice(2,8)+'.png';
       const up=await db.storage.from('dibujos').upload(name, blob, {contentType:'image/png'}); if(up.error) throw up.error;
       const pub=db.storage.from('dibujos').getPublicUrl(name).data.publicUrl;
-      const ins=await db.from('dibujos').insert({image_url:pub, nombre:nombre||null, personaje:personajeSel||null}); if(ins.error) throw ins.error;
+      const ins=await db.from('dibujos').insert({image_url:pub, nombre:nombre||null, personaje:animalSel||null}); if(ins.error) throw ins.error;
       showStatus('done', finalCanvas.toDataURL('image/png'), nombre);
     }catch(err){ console.error(err); showStatus('error','', err.message||''); }
   }, 'image/png');
@@ -288,7 +324,7 @@ function showStatus(state, dataUrl, extra){
   else if(state==='done'){ statusInner.innerHTML='<img src="'+dataUrl+'"><h2>¡Listo'+(extra?(', '+extra):'')+'! 🐠</h2><p>Tu dibujo ya está nadando. Mira la pantalla grande.</p><button class="btn" id="again" style="max-width:220px">Tomar otro</button>'; document.getElementById('again').onclick=reset; }
   else { statusInner.innerHTML='<h2>Uy, no se pudo enviar</h2><p>'+(extra||'Revisa la conexión e inténtalo de nuevo')+'</p><button class="btn ghost" id="again" style="max-width:220px;flex:none">Reintentar</button>'; document.getElementById('again').onclick=()=>{ statusEl.classList.remove('show'); review.classList.add('show'); }; }
 }
-function reset(){ statusEl.classList.remove('show'); dock.classList.remove('hide'); document.getElementById('nombre').value=''; sharpSlider.value=35; cutSlider.value=65; rawResized=null; baseCropped=null; finalCanvas=null; personajeSel=null; document.getElementById('persVal').textContent='—'; pg.querySelectorAll('.chip').forEach(x=>x.classList.remove('sel')); }
+function reset(){ statusEl.classList.remove('show'); dock.classList.remove('hide'); document.getElementById('nombre').value=''; sharpSlider.value=35; cutSlider.value=65; rawResized=null; baseCropped=null; finalCanvas=null; animalSel=null; autoDetectDone=false; setAnimal(null); }
 </script>
 </body>
 </html>
