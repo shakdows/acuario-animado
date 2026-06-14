@@ -263,8 +263,9 @@ function setAnimal(val){ animalSel=val||null; pg.querySelectorAll('.chip').forEa
 PERS.forEach(([id,em,nm])=>{ const c=document.createElement('div'); c.className='chip'; c.dataset.id=id; c.innerHTML='<span class="em">'+em+'</span>'+nm;
   c.onclick=()=>setAnimal(animalSel===id?null:id); pg.appendChild(c); });
 
+function geminiKey(){ return (window.ACUARIO_CONFIG&&window.ACUARIO_CONFIG.GEMINI_API_KEY)||(typeof GEMINI_API_KEY!=='undefined'&&GEMINI_API_KEY)||''; }
 async function detectAnimal(canvas){
-  const key=(typeof GEMINI_API_KEY!=='undefined' && GEMINI_API_KEY)?GEMINI_API_KEY:'';
+  const key=geminiKey();
   if(!key || !canvas) return null;
   const b64=canvas.toDataURL('image/jpeg',0.85).split(',')[1];
   const body={contents:[{parts:[
@@ -280,7 +281,7 @@ async function detectAnimal(canvas){
 }
 async function runDetect(manual){
   const pv=document.getElementById('persVal'), btn=document.getElementById('btnDetect');
-  if(typeof GEMINI_API_KEY==='undefined' || !GEMINI_API_KEY){ if(manual) pv.textContent='⚠️ Falta API key (config.js)'; return; }
+  if(!geminiKey()){ if(manual) pv.textContent='⚠️ Falta API key en config.js'; return; }
   if(!finalCanvas) return;
   pv.textContent='🤖 Detectando…'; if(btn) btn.disabled=true;
   try{ const a=await detectAnimal(finalCanvas);
@@ -312,7 +313,11 @@ document.getElementById('send').onclick=()=>{
       const name=Date.now()+'-'+Math.random().toString(36).slice(2,8)+'.png';
       const up=await db.storage.from('dibujos').upload(name, blob, {contentType:'image/png'}); if(up.error) throw up.error;
       const pub=db.storage.from('dibujos').getPublicUrl(name).data.publicUrl;
-      const ins=await db.from('dibujos').insert({image_url:pub, nombre:nombre||null, personaje:animalSel||null}); if(ins.error) throw ins.error;
+      let ins=await db.from('dibujos').insert({image_url:pub, nombre:nombre||null, personaje:animalSel||null});
+      if(ins.error && /personaje|column|schema cache|PGRST204/i.test(((ins.error.message||'')+' '+(ins.error.code||'')))){
+        ins=await db.from('dibujos').insert({image_url:pub, nombre:nombre||null});
+      }
+      if(ins.error) throw ins.error;
       showStatus('done', finalCanvas.toDataURL('image/png'), nombre);
     }catch(err){ console.error(err); showStatus('error','', err.message||''); }
   }, 'image/png');
