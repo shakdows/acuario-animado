@@ -12,6 +12,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
 <script src="config.js"></script>
 <script src="personajes.js"></script>
+<script src="personajes-espacio.js"></script>
 <style>
   :root{
     --abyss:#02141f; --deep:#063047; --mid:#0a5a7a; --surface:#1593b0;
@@ -28,6 +29,7 @@
     position:relative;
   }
   .rays{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:1;mix-blend-mode:screen;opacity:.42}
+  body.espacio .rays{display:none}
   .ray{position:absolute;top:-25%;width:20vw;height:150vh;
     background:linear-gradient(180deg, rgba(255,255,255,.26), rgba(255,255,255,0) 72%);
     filter:blur(14px);transform-origin:top center}
@@ -122,6 +124,23 @@
     .btn{padding:12px 16px;font-size:14px}
     .controls{gap:8px;padding:10px;width:calc(100% - 24px);justify-content:center;flex-wrap:wrap}
   }
+  #worldPicker{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;padding:24px;
+    background:radial-gradient(120% 90% at 50% -10%, rgba(130,150,255,.20), transparent 52%), linear-gradient(180deg,#0c1438 0%,#080a22 50%,#05030f 100%)}
+  #worldPicker.hidden{display:none}
+  .wp-inner{width:min(940px,96vw);text-align:center}
+  .wp-title{font-family:"Fredoka";font-weight:700;font-size:clamp(28px,5vw,46px);color:#fff;margin-bottom:8px}
+  .wp-sub{color:#aab4d4;font-size:16px;margin-bottom:30px}
+  .wp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(196px,1fr));gap:18px}
+  .wp-card{cursor:pointer;border-radius:24px;padding:32px 18px;font-family:"Fredoka";color:#fff;
+    background:linear-gradient(160deg,rgba(255,255,255,.11),rgba(255,255,255,.03));border:1px solid rgba(255,255,255,.15);
+    backdrop-filter:blur(8px);transition:transform .15s, box-shadow .15s;display:flex;flex-direction:column;align-items:center;gap:8px}
+  .wp-card:hover{transform:translateY(-6px);box-shadow:0 22px 54px rgba(0,0,0,.55);border-color:rgba(255,255,255,.32)}
+  .wp-card .em{font-size:62px;line-height:1;filter:drop-shadow(0 6px 14px rgba(0,0,0,.4))}
+  .wp-card .nm{font-size:22px;font-weight:600}
+  .wp-card .sb{font-size:13px;color:#aeb7d6;font-weight:400}
+  .wp-card.locked{opacity:.45;cursor:not-allowed}
+  .wp-card.locked:hover{transform:none;box-shadow:none;border-color:rgba(255,255,255,.15)}
+  .wp-foot{margin-top:28px;color:#6b74a0;font-size:13px;letter-spacing:.10em;text-transform:uppercase}
 </style>
 </head>
 <body>
@@ -130,6 +149,15 @@
   </div>
 
   <div id="stage"></div>
+
+  <div id="worldPicker">
+    <div class="wp-inner">
+      <div class="wp-title">Elige tu mundo mágico ✨</div>
+      <div class="wp-sub">Cada mundo tiene sus propios personajes y su propio cuento narrado</div>
+      <div class="wp-grid" id="wpGrid"></div>
+      <div class="wp-foot">VERONIX · instalación interactiva</div>
+    </div>
+  </div>
 
   <div class="topbar">
     <div class="brand"><i class="dot"></i><b>VERONIX</b><span>· Acuario Mágico</span></div>
@@ -157,6 +185,10 @@
     <button class="btn ghost" id="btnClear">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>
       Vaciar océano
+    </button>
+    <button class="btn ghost" id="btnWorld">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 010 18M12 3a14 14 0 000 18"/></svg>
+      Mundo
     </button>
   </div>
 
@@ -578,8 +610,8 @@ document.getElementById('btnClear').onclick=()=>{
 /* ============================================================
    MODO CINE — los dibujos actúan el cuento "La Perla de Luz"
    ============================================================ */
-const ROLES=['pez','medusa','estrella','pulpo','caballito','tortuga','cangrejo','ballena'];
-const PERSONA={
+let ROLES=['pez','medusa','estrella','pulpo','caballito','tortuga','cangrejo','ballena'];
+let PERSONA={
   pez:['Nilo','el pez más curioso del arrecife'],
   medusa:['Lumi','la medusa que ilumina la oscuridad'],
   estrella:['Estela','la estrella que conoce todos los caminos'],
@@ -589,6 +621,9 @@ const PERSONA={
   cangrejo:['Tenaza','el cangrejo de pinzas poderosas'],
   ballena:['Azul','la ballena que canta canciones mágicas'],
 };
+let FALLBACK = window.PERSONAJES || {};
+let TEMA = 'mar';
+let GUION = [];
 const castByRole={}, looseArt=[];
 function registerCast(role, tex, nombre){
   const e={tex, nombre:(nombre||'').trim()};
@@ -597,13 +632,14 @@ function registerCast(role, tex, nombre){
 
 const cineTex={}; let cineReady=false;
 function preloadCine(){
-  if(cineReady) return Promise.resolve();
-  if(!window.PERSONAJES){ cineReady=true; return Promise.resolve(); }
+  cineReady=false;
+  if(!FALLBACK || !Object.keys(FALLBACK).length){ cineReady=true; return Promise.resolve(); }
   return Promise.all(ROLES.map(r=>new Promise(res=>{
-    const im=new Image(); im.onload=()=>{ try{ cineTex[r]=PIXI.Texture.from(im); }catch(e){} res(); }; im.onerror=()=>res(); im.src=window.PERSONAJES[r];
+    if(!FALLBACK[r]){ res(); return; }
+    const im=new Image(); im.onload=()=>{ try{ cineTex[r]=PIXI.Texture.from(im); }catch(e){} res(); }; im.onerror=()=>res(); im.src=FALLBACK[r];
   }))).then(()=>{ cineReady=true; });
 }
-preloadCine();
+/* preloadCine corre al cargar cada mundo */
 
 const cineNameStyle=new PIXI.TextStyle({fontFamily:'Fredoka, sans-serif',fontSize:26,fontWeight:'700',fill:'#ffffff',stroke:'#063047',strokeThickness:6,dropShadow:true,dropShadowColor:'#021019',dropShadowBlur:4,dropShadowDistance:1});
 
@@ -624,7 +660,8 @@ const reef=new PIXI.Container(); cineBg.addChild(reef);
 const drift=new PIXI.Container(); cineBg.addChild(drift);
 const cave=new PIXI.Container(); cineBg.addChild(cave);
 let bgMode='arrecife', bgT=0, bgEnter=0;
-function buildScape(){
+function buildScape(){ if(TEMA==='espacio') buildScapeEspacio(); else buildScapeMar(); }
+function buildScapeMar(){
   reef.removeChildren(); drift.removeChildren(); cave.removeChildren();
   const w=W(), h=H();
   const cols=[0xff6b6b,0xffa94d,0xffd43b,0x9775fa,0x4dabf7,0x69db7c,0xf783ac];
@@ -641,8 +678,29 @@ function buildScape(){
   cave.pivot.set(w/2,h/2); cave.position.set(w/2,h/2);
   layoutInit();
 }
+function buildScapeEspacio(){
+  reef.removeChildren(); drift.removeChildren(); cave.removeChildren();
+  const w=W(),h=H();
+  for(let i=0;i<90;i++){ const g=new PIXI.Graphics(); const r=1+Math.random()*2.4; g.beginFill(0xffffff,1).drawCircle(0,0,r).endFill(); g.x=Math.random()*w; g.y=Math.random()*h*0.96; g.kind='star'; g.b=0.5+Math.random()*0.5; g.ph=Math.random()*6.28; g.alpha=g.b; reef.addChild(g); }
+  const pl=new PIXI.Graphics(); pl.kind='planeta';
+  pl.beginFill(0xc89bff,1).drawCircle(0,0,92).endFill();
+  pl.beginFill(0xa878f0,1).drawCircle(-30,-24,16).drawCircle(28,30,22).endFill();
+  pl.lineStyle(13,0xffd23f,0.9); pl.drawEllipse(0,0,152,48);
+  pl.x=w*0.76; pl.y=h*0.30; pl.rotation=-0.3; pl.visible=false; reef.addChild(pl);
+  const mo=new PIXI.Graphics(); mo.kind='luna';
+  mo.beginFill(0xeef1f6,1).drawCircle(0,0,82).endFill();
+  mo.beginFill(0xd2dae6,1).drawCircle(-26,-14,15).drawCircle(22,24,20).drawCircle(20,-30,10).endFill();
+  mo.x=w*0.24; mo.y=h*0.28; mo.visible=false; reef.addChild(mo);
+  const gcl=[0x9775fa,0x4dabf7,0xf783ac,0xffd43b];
+  for(let i=0;i<5;i++){ const g=new PIXI.Graphics(); g.kind='galaxia'; g.beginFill(gcl[i%gcl.length],0.5).drawEllipse(0,0,120+i*30,46+i*12).endFill(); g.x=w*(0.2+0.15*i); g.y=h*(0.30+0.12*Math.sin(i*1.5)); g.rotation=i*0.5; g.visible=false; reef.addChild(g); }
+  for(let i=0;i<9;i++){ const g=new PIXI.Graphics(); const rr=20+((i*29)%46); g.beginFill(0x6b7280,0.92).drawEllipse(0,0,rr,rr*0.78).endFill(); g.beginFill(0x515866,0.9).drawCircle(-rr*0.3,-rr*0.2,rr*0.22).drawCircle(rr*0.25,rr*0.18,rr*0.16).endFill(); g.x=(i/9)*w*1.4; g.y=h*(0.18+0.62*Math.random()); g.spd=0.7+(i%3)*0.3; drift.addChild(g); }
+  for(let i=0;i<10;i++){ const g=new PIXI.Graphics(); g.beginFill(0x2a1850,0.5).drawEllipse(0,0,180+Math.random()*160,120+Math.random()*120).endFill(); g.x=Math.random()*w; g.y=Math.random()*h; g.spd=0.3+Math.random()*0.5; cave.addChild(g); }
+  cave.pivot.set(0,0); cave.position.set(0,0);
+  reef.visible=true; drift.visible=false; cave.visible=false; cave.alpha=1; cave.scale.set(1);
+}
 function layoutInit(){ reef.visible=true; drift.visible=false; cave.visible=false; cave.scale.set(1); cave.alpha=1; }
-function setScape(mode){
+function setScape(mode){ if(TEMA==='espacio') setScapeEspacio(mode); else setScapeMar(mode); }
+function setScapeMar(mode){
   bgMode=mode; const w=W(),h=H();
   const tints={ arrecife:[0x0a4f6e,0.0], apagado:[0x6b7780,0.5], viaje:[0x083047,0.22], corriente:[0x0a3a52,0.3], cueva:[0x010d16,0.72], entrada:[0x021621,0.45], fiesta:[0xffd86b,0.06] };
   const tt=tints[mode]||tints.arrecife; bgTint.clear(); if(tt[1]>0) bgTint.beginFill(tt[0],tt[1]).drawRect(0,0,w,h).endFill();
@@ -652,6 +710,15 @@ function setScape(mode){
   if(mode==='entrada'){ cave.visible=true; bgEnter=0; cave.scale.set(0.5); cave.alpha=0; }
   else if(mode==='cueva'){ cave.visible=true; cave.scale.set(1); cave.alpha=1; }
   else { cave.visible=false; }
+}
+function setScapeEspacio(mode){
+  bgMode=mode; const w=W(),h=H();
+  const tints={ polvo:[0x140a30,0.60], mirador:[0x241452,0.14], fiesta:[0xffd86b,0.05] };
+  const tt=tints[mode]; bgTint.clear(); if(tt) bgTint.beginFill(tt[0],tt[1]).drawRect(0,0,w,h).endFill();
+  reef.visible=true;
+  reef.children.forEach(c=>{ if(c.kind==='planeta') c.visible=(mode==='planeta'); else if(c.kind==='luna') c.visible=(mode==='luna'); else if(c.kind==='galaxia') c.visible=(mode==='mirador'); else c.visible=true; });
+  drift.visible=(mode==='viaje'||mode==='lluvia');
+  cave.visible=(mode==='polvo');
 }
 
 class Actor{
@@ -769,7 +836,7 @@ function applyAudio(s){
   else if(s.fx==='brilla'||s.fx==='perla') shimmer();
 }
 
-const GUION=[
+const GUION_ACUARIO=[
  {mode:'titulo', txt:'VERONIX presenta', dur:5000},
  {mode:'titulo', txt:'✨ La Perla de Luz ✨', dur:7000, fx:'perla'},
  {mode:'titulo', txt:'Una aventura del fondo del mar', dur:6000},
@@ -842,6 +909,98 @@ const GUION=[
  {mode:'creditos', txt:'', dur:22000},
 ];
 
+/* ===================== MUNDO ESPACIO: "El Gran Viaje de Lucero" ===================== */
+const ROLES_ESPACIO=['cohete','astronauta','alien','robot','planeta','estrella','luna','ovni'];
+const PERSONA_ESPACIO={
+  cohete:['Chispa','el cohete más veloz del espacio'],
+  astronauta:['Cosmo','el explorador más valiente'],
+  alien:['Zix','el amigo que viene de otro planeta'],
+  robot:['Tuerca','el robot que todo lo repara'],
+  planeta:['Orbi','el planeta gigante de anillos brillantes'],
+  estrella:['Lucero','la estrellita más curiosa del cielo'],
+  luna:['Lunita','la luna que guía en la noche'],
+  ovni:['Disco','el platillo que hace mil piruetas'],
+};
+const GUION_ESPACIO=[
+ {mode:'titulo', txt:'VERONIX presenta', dur:5000},
+ {mode:'titulo', txt:'🚀 El Gran Viaje de Lucero 🌟', dur:7000, fx:'perla', bg:'cielo'},
+ {mode:'titulo', txt:'Una aventura entre las estrellas', dur:6000, bg:'cielo'},
+ {mode:'titulo', txt:'Pero antes de despegar… conozcamos a la tripulación.', dur:6500, bg:'cielo'},
+ {mode:'presenta', present:'cohete', dur:11000},
+ {mode:'presenta', present:'astronauta', dur:11000},
+ {mode:'presenta', present:'alien', dur:11000},
+ {mode:'presenta', present:'robot', dur:11000},
+ {mode:'presenta', present:'planeta', dur:11000},
+ {mode:'presenta', present:'luna', dur:11000},
+ {mode:'presenta', present:'ovni', dur:11000},
+ {mode:'presenta', present:'estrella', dur:12000},
+ {mode:'solo', star:'estrella', speaker:'estrella', txt:'Allá arriba, quietecita en el cielo, vivía Lucero.', dur:8500, bg:'cielo', fx:'brilla'},
+ {mode:'solo', star:'estrella', speaker:'estrella', txt:'Cada noche miraba el espacio enorme… pero siempre desde lejos.', dur:9000, bg:'cielo'},
+ {mode:'solo', star:'estrella', speaker:'estrella', txt:'«¿Cómo serán los planetas de cerca? ¿Y la lluvia de estrellas?», soñaba.', dur:9500, bg:'cielo'},
+ {mode:'duo', star:'estrella', speaker:'astronauta', txt:'Cosmo, el explorador, escuchó su deseo desde su nave.', dur:9000, bg:'cielo'},
+ {mode:'duo', star:'estrella', speaker:'astronauta', txt:'«¡Lucero, hoy vas a conocer el universo entero!», le dijo sonriendo.', dur:9500, bg:'cielo'},
+ {mode:'grupo', txt:'Todos los amigos se reunieron para preparar el gran viaje.', dur:9000, bg:'cielo', star:'astronauta'},
+ {mode:'solo', star:'cohete', speaker:'cohete', txt:'Chispa, el cohete veloz, trajo un meteorito brillante para montar.', dur:9000, bg:'viaje', fx:'temblor'},
+ {mode:'grupo', txt:'Con muchísimo cuidado, subieron a Lucero sobre el meteorito.', dur:9000, bg:'cielo', star:'estrella'},
+ {mode:'grupo', txt:'«¿Lista? ¡Tres… dos… uno… YA!»', dur:7000, bg:'cielo', fx:'brilla', star:'estrella'},
+ {mode:'viaje', txt:'Y despegaron hacia las estrellas a toda velocidad. 🚀', dur:9000, bg:'viaje', fx:'temblor', star:'estrella'},
+ {mode:'viaje', txt:'Lucero veía pasar lucecitas por todos lados. ¡Nunca había ido tan rápido!', dur:9500, bg:'viaje', star:'estrella'},
+ {mode:'circulo', txt:'Primera parada: los anillos gigantes de Orbi.', dur:8500, bg:'planeta', fx:'brilla'},
+ {mode:'solo', star:'planeta', speaker:'planeta', txt:'«Da una vuelta por mis anillos, pequeña», dijo Orbi, el planeta sabio.', dur:9500, bg:'planeta', fx:'brilla'},
+ {mode:'grupo', txt:'Lucero giró y giró entre los anillos, riendo de felicidad.', dur:9000, bg:'planeta', star:'estrella'},
+ {mode:'grupo', txt:'Después saltaron por los cráteres saltarines de la Luna.', dur:9000, bg:'luna', star:'estrella'},
+ {mode:'solo', star:'luna', speaker:'luna', txt:'«Por aquí, amigos», guió Lunita con su luz suave y plateada.', dur:9000, bg:'luna', fx:'brilla'},
+ {mode:'grupo', txt:'De pronto llegaron a la lluvia de estrellas más linda del cielo. ✨', dur:9000, bg:'lluvia', fx:'brilla', star:'estrella'},
+ {mode:'solo', star:'ovni', speaker:'ovni', txt:'Disco hacía piruetas entre los meteoros, ¡giro tras giro!', dur:9000, bg:'lluvia', fx:'corte'},
+ {mode:'duo', star:'estrella', speaker:'alien', txt:'«Mira, ese de allá es MI planeta», señaló Zix con orgullo.', dur:9500, bg:'planeta'},
+ {mode:'grupo', txt:'Lucero descubría un mundo nuevo en cada rincón. ¡Todo era asombroso!', dur:9000, bg:'cielo', star:'estrella'},
+ {mode:'grupo', txt:'Pero de repente, una gran tormenta de polvo cósmico los rodeó.', dur:9000, bg:'polvo', fx:'dark', star:'estrella'},
+ {mode:'grupo', txt:'El meteorito se sacudía y casi no se veía nada.', dur:8500, bg:'polvo', fx:'temblor', star:'estrella'},
+ {mode:'solo', star:'robot', speaker:'robot', txt:'«¡Yo lo arreglo!» Tuerca ajustó el meteorito con sus herramientas.', dur:9500, bg:'polvo', fx:'corte'},
+ {mode:'solo', star:'ovni', speaker:'ovni', txt:'Disco encendió todas sus luces para mostrar el camino.', dur:9000, bg:'polvo', fx:'brilla'},
+ {mode:'solo', star:'luna', speaker:'luna', txt:'Y Lunita brilló con todas sus fuerzas para guiarlos.', dur:9000, bg:'polvo', fx:'brilla'},
+ {mode:'grupo', txt:'Juntos, muy juntitos, atravesaron la tormenta sin miedo.', dur:9000, bg:'polvo', star:'estrella'},
+ {mode:'viaje', txt:'Y al salir… ¡llegaron al Mirador del Universo!', dur:9000, bg:'mirador', fx:'brilla', star:'estrella'},
+ {mode:'circulo', txt:'Ante ellos se abrieron galaxias enteras, llenas de colores.', dur:9500, bg:'mirador', fx:'perla'},
+ {mode:'solo', star:'estrella', speaker:'estrella', txt:'Lucero miró TODO el universo de cerca. Sus ojitos se llenaron de luz.', dur:10000, bg:'mirador', fx:'perla'},
+ {mode:'solo', star:'estrella', speaker:'estrella', txt:'Y entonces, Lucero empezó a brillar más y más… ¡como nunca antes!', dur:9500, bg:'mirador', fx:'brilla'},
+ {mode:'circulo', txt:'Todos la rodearon, maravillados por su luz.', dur:8500, bg:'mirador', fx:'perla', star:'estrella'},
+ {mode:'viaje', txt:'Llegó la hora de volver a casa, y esta vez…', dur:8000, bg:'viaje', star:'estrella'},
+ {mode:'grupo', txt:'¡Lucero iluminó todo el camino de regreso!', dur:9000, bg:'viaje', fx:'brilla', star:'estrella'},
+ {mode:'fiesta', txt:'En casa, los esperaba una fiesta espacial enorme. 🎉', dur:9000, bg:'fiesta', fx:'color', star:'estrella'},
+ {mode:'solo', star:'estrella', speaker:'estrella', txt:'Desde esa noche, Lucero es la estrella más brillante del cielo.', dur:9500, bg:'fiesta', fx:'brilla'},
+ {mode:'grupo', txt:'Porque se atrevió a soñar… y sus amigos la llevaron a descubrir.', dur:9500, bg:'cielo', star:'estrella'},
+ {mode:'fin', txt:'🌟 ¡El Gran Viaje de Lucero! 🌟', dur:11000, fx:'perla', bg:'mirador'},
+ {mode:'titulo', txt:'Sueña en grande. El universo te está esperando.', dur:9000, bg:'cielo'},
+ {mode:'creditos', txt:'', dur:22000},
+];
+
+/* ===================== SISTEMA DE MUNDOS ===================== */
+const BG_MAR='radial-gradient(130% 95% at 50% -12%, rgba(120,240,255,.16), transparent 46%), linear-gradient(180deg,#0a5a7a 0%,#08415c 26%,#052a3d 62%,#021019 100%)';
+const BG_ESPACIO='radial-gradient(120% 90% at 30% -8%, rgba(155,120,255,.30), transparent 50%), radial-gradient(90% 80% at 80% 20%, rgba(80,170,255,.16), transparent 55%), linear-gradient(180deg,#1a1140 0%,#120b2e 40%,#0a0720 70%,#05030f 100%)';
+const MUNDOS={
+  acuario:{ nombre:'Acuario Mágico', emoji:'🐠', sub:'Peces y criaturas del mar', roles:ROLES.slice(), persona:PERSONA, guion:GUION_ACUARIO, fallback:(window.PERSONAJES||{}), tema:'mar', pearl:0x2ee6cf, bg:BG_MAR, listo:true },
+  espacio:{ nombre:'Viaje al Espacio', emoji:'🚀', sub:'Cohetes, planetas y estrellas', roles:ROLES_ESPACIO, persona:PERSONA_ESPACIO, guion:GUION_ESPACIO, fallback:(window.PERSONAJES_ESPACIO||{}), tema:'espacio', pearl:0xffd23f, bg:BG_ESPACIO, listo:true },
+  oeste:{ nombre:'Viejo Oeste', emoji:'🤠', sub:'Próximamente', listo:false },
+  parque:{ nombre:'El Parque', emoji:'🌳', sub:'Próximamente', listo:false },
+};
+let MUNDO_ID='acuario';
+function setPearlColor(c){ cinePearl.children.forEach(ch=>{ ch.tint=c; }); }
+function cargarMundo(id){
+  const m=MUNDOS[id]; if(!m||!m.listo) return;
+  MUNDO_ID=id;
+  ROLES=m.roles; PERSONA=m.persona; GUION=m.guion; FALLBACK=m.fallback||{}; TEMA=m.tema;
+  for(const k in castByRole) delete castByRole[k]; looseArt.length=0;
+  for(const k in cineTex) delete cineTex[k]; cineReady=false;
+  setPearlColor(m.pearl||0xffffff);
+  document.body.style.background=m.bg;
+  document.body.classList.toggle('espacio', m.tema==='espacio');
+  const esp=(m.tema==='espacio');
+  plantLayer.visible=!esp; planktonLayer.visible=!esp;
+  buildScape();
+  preloadCine();
+}
+
 function buildActors(){
   Object.values(actors).forEach(a=>{ cinemaLayer.removeChild(a.sprite); a.sprite.destroy(); if(a.label){cinemaLayer.removeChild(a.label); a.label.destroy();} }); actors={};
   const loose=[...looseArt]; let li=0;
@@ -849,7 +1008,7 @@ function buildActors(){
     let e;
     if(castByRole[r]) e=castByRole[r];
     else if(li<loose.length) e=loose[li++];
-    else e={tex: cineTex[r] || (window.PERSONAJES?PIXI.Texture.from(window.PERSONAJES[r]):PIXI.Texture.WHITE), nombre:''};
+    else e={tex: cineTex[r] || (FALLBACK&&FALLBACK[r]?PIXI.Texture.from(FALLBACK[r]):PIXI.Texture.WHITE), nombre:''};
     actors[r]=new Actor(r, e.tex, e.nombre);
   });
 }
@@ -896,7 +1055,7 @@ function applyScene(i){
   let bg=s.bg;
   if(!bg){ if(s.fx==='gris') bg='apagado'; else if(s.mode==='cruce') bg='corriente'; else if(s.mode==='viaje') bg='viaje'; else if(s.fx==='color'||s.mode==='fiesta'||s.mode==='fin') bg='fiesta'; else if(s.fx==='dark'||s.mode==='oscuridad') bg='cueva'; else bg='arrecife'; }
   setScape(bg);
-  ROLES.forEach(r=>{ if(!actors[r])return; let tc=0xffffff; if(s.fx==='gris')tc=0x9aa6ad; else if(bg==='cueva'||bg==='entrada'){ tc=(r===(speaker||star))?0xffffff:0x5b6b79; } actors[r].tint(tc); });
+  ROLES.forEach(r=>{ if(!actors[r])return; let tc=0xffffff; if(s.fx==='gris')tc=0x9aa6ad; else if(bg==='cueva'||bg==='entrada'||bg==='polvo'){ tc=(r===(speaker||star))?0xffffff:0x5b6b79; } actors[r].tint(tc); });
   cineDark.clear();
   const showPearl=(s.fx==='perla'||s.mode==='fin'); cinePearl.visible=showPearl;
   if(showPearl){ cinePearl.x=W()*0.5; cinePearl.y=(s.mode==='fin'||s.mode==='fiesta')?H()*0.16:(s.mode==='circulo'?H()*0.48:H()*0.20); cinePearl.baseScale=(s.mode==='fin')?2.4:(s.mode==='circulo'?1.5:1.2); }
@@ -942,9 +1101,16 @@ window.__cineTick=function(d){
   if(cinePearl.visible){ const b=cinePearl.baseScale||1.2; cinePearl.scale.set(b*(1+Math.sin(performance.now()*0.004)*0.10)); }
   cinemaLayer.x=(curScene&&curScene.fx==='temblor')?(Math.random()-0.5)*8:0;
   bgT+=d;
+  if(TEMA==='espacio'){
+    for(const c of reef.children){ if(c.kind==='star'){ c.alpha=c.b*(0.55+0.45*Math.sin(bgT*0.05+c.ph)); } }
+    if(bgMode==='viaje'||bgMode==='lluvia'){ const sp=(bgMode==='lluvia'?3.2:1.9); drift.children.forEach(g=>{ g.x-=sp*g.spd*d; if(g.x<-110) g.x=W()+110; }); }
+    if(bgMode==='polvo'){ cave.children.forEach(g=>{ g.x-=g.spd*d*0.6; if(g.x<-220) g.x=W()+220; }); }
+    cineBg.y=0;
+  } else {
   if(bgMode==='viaje'||bgMode==='corriente'){ const sp=(bgMode==='corriente'?3.4:1.9); drift.children.forEach(g=>{ g.x-=sp*g.spd*d; if(g.x<-90) g.x=W()+90; }); }
   if(bgMode==='entrada'){ bgEnter=Math.min(1,bgEnter+0.006*d); cave.scale.set(0.5+0.5*bgEnter); cave.alpha=bgEnter; }
   if(bgMode==='cueva'){ cineBg.y=Math.sin(bgT*0.02)*7; } else if(bgMode!=='entrada'){ cineBg.y=0; }
+  }
   if(!cinePaused){
     const voz = narrOn && synth && curSubText;
     const est = curSubText ? curSubText.length*110+3500 : 0;
@@ -953,6 +1119,28 @@ window.__cineTick=function(d){
   }
 };
 document.getElementById('btnCine').onclick=startCinema;
+/* ---- Selector de mundos ---- */
+function pintarMundos(){
+  const grid=document.getElementById('wpGrid'); grid.innerHTML='';
+  for(const id in MUNDOS){ const m=MUNDOS[id];
+    const b=document.createElement('button'); b.className='wp-card'+(m.listo?'':' locked');
+    b.innerHTML='<span class="em">'+m.emoji+'</span><span class="nm">'+m.nombre+'</span><span class="sb">'+(m.sub||'')+'</span>';
+    if(m.listo) b.addEventListener('click',()=>elegirMundo(id));
+    grid.appendChild(b);
+  }
+}
+function elegirMundo(id){
+  const m=MUNDOS[id]; if(!m||!m.listo) return;
+  cargarMundo(id);
+  document.getElementById('worldPicker').classList.add('hidden');
+  const bs=document.querySelector('.brand span'); if(bs) bs.textContent='· '+m.nombre;
+  const eH=document.querySelector('#empty h1'), eP=document.querySelector('#empty p');
+  if(m.tema==='espacio'){ if(eH) eH.innerHTML='El espacio espera<br>tu <em>primer dibujo</em>'; if(eP) eP.textContent='Colorea tu personaje, captúralo y míralo volar entre las estrellas.'; }
+  else { if(eH) eH.innerHTML='El océano espera<br>tu <em>primer dibujo</em>'; if(eP) eP.textContent='Dibuja sobre papel, captúralo y míralo cobrar vida.'; }
+}
+document.getElementById('btnWorld').addEventListener('click',()=>{ document.getElementById('worldPicker').classList.remove('hidden'); });
+pintarMundos();
+cargarMundo('acuario');
 document.getElementById('cineExit').onclick=stopCinema;
 document.getElementById('cineNext').onclick=nextScene;
 document.getElementById('cinePrev').onclick=prevScene;
