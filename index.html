@@ -257,6 +257,32 @@ app.stage.addChild(depthLayer, plantLayer, planktonLayer, bubbleLayer, creatureL
 const W = () => app.renderer.width / app.renderer.resolution;
 const H = () => app.renderer.height / app.renderer.resolution;
 
+/* ---------- Fondo por mundo (capa base, debajo de todo) ---------- */
+const worldBg = new PIXI.Container(); app.stage.addChildAt(worldBg, 0);
+const worldGrad = new PIXI.Graphics(); worldBg.addChild(worldGrad);
+const worldArt = new PIXI.Container(); worldBg.addChild(worldArt);
+worldBg.visible=false;
+function lerpCol(a,b,t){ const r=Math.round((a>>16&255)*(1-t)+(b>>16&255)*t), g=Math.round((a>>8&255)*(1-t)+(b>>8&255)*t), bl=Math.round((a&255)*(1-t)+(b&255)*t); return (r<<16)|(g<<8)|bl; }
+function paintGrad(gfx,w,h,stops){ gfx.clear(); const N=52; for(let i=0;i<N;i++){ const t=i/(N-1); let c=stops[stops.length-1][1]; for(let s=0;s<stops.length-1;s++){ const p0=stops[s][0],c0=stops[s][1],p1=stops[s+1][0],c1=stops[s+1][1]; if(t>=p0&&t<=p1){ c=lerpCol(c0,c1,(t-p0)/((p1-p0)||1)); break; } } gfx.beginFill(c,1).drawRect(0,h*t-1,w,h/N+3).endFill(); } }
+const GRAD={ mar:[[0,0x0a5a7a],[0.26,0x08415c],[0.62,0x052a3d],[1,0x021019]],
+  espacio:[[0,0x2a1a55],[0.4,0x160d34],[0.7,0x0c0722],[1,0x05030f]],
+  oeste:[[0,0x6db6d6],[0.32,0xbfe0e6],[0.6,0xf3cf8e],[0.82,0xe3a85c],[1,0xc97f3e]] };
+function pintarFondoMundo(tema){
+  const w=W(),h=H(); worldArt.removeChildren();
+  if(tema==='mar'){ worldBg.visible=false; return; }
+  worldBg.visible=true; paintGrad(worldGrad,w,h,GRAD[tema]||GRAD.mar);
+  if(tema==='espacio'){
+    for(let i=0;i<140;i++){ const g=new PIXI.Graphics(); const r=1+Math.random()*2.3; g.beginFill(0xffffff,0.5+Math.random()*0.5).drawCircle(0,0,r).endFill(); g.x=Math.random()*w; g.y=Math.random()*h; g.kind='star'; g.b=g.alpha; g.ph=Math.random()*6.28; worldArt.addChild(g); }
+    const p1=new PIXI.Graphics(); p1.beginFill(0x6f4fb0,0.55).drawCircle(0,0,72).endFill(); p1.beginFill(0x8a63d6,0.5).drawCircle(-20,-16,14).endFill(); p1.x=w*0.15; p1.y=h*0.22; worldArt.addChild(p1);
+    const p2=new PIXI.Graphics(); p2.beginFill(0x4a6fb0,0.45).drawCircle(0,0,42).endFill(); p2.x=w*0.86; p2.y=h*0.15; worldArt.addChild(p2);
+  } else if(tema==='oeste'){
+    const ground=h*0.72;
+    const sun=new PIXI.Graphics(); sun.beginFill(0xfff3cf,0.45).drawCircle(0,0,118).endFill(); sun.beginFill(0xffe7a0,0.96).drawCircle(0,0,72).endFill(); sun.x=w*0.78; sun.y=h*0.20; worldArt.addChild(sun);
+    [[0.15,150,92],[0.46,212,132],[0.8,140,82]].forEach(([px,bw,bh])=>{ const g=new PIXI.Graphics(); g.beginFill(0xb8531f,0.92).drawRoundedRect(w*px-bw/2,ground-bh,bw,bh,18).endFill(); g.beginFill(0x9c4419,0.9).drawRect(w*px-bw/2,ground-bh*0.36,bw,9).endFill(); worldArt.addChild(g); });
+    const fl=new PIXI.Graphics(); fl.beginFill(0xe3b873,1).drawRect(0,ground,w,h-ground).endFill(); fl.beginFill(0xcea055,1).drawRect(0,ground,w,14).endFill(); worldArt.addChild(fl);
+  }
+}
+
 /* ---------- Profundidad (oscurecimiento inferior) ---------- */
 const gcan=document.createElement('canvas'); gcan.width=8; gcan.height=512;
 const gctx=gcan.getContext('2d');
@@ -327,6 +353,7 @@ for(let i=0;i<(reduceMotion?8:22);i++) spawnBubble(Math.random()*H());
 function onResize(){
   depthSprite.width=W(); depthSprite.height=H();
   plants.forEach(p=>p.y=H()+10);
+  try{ if(TEMA && TEMA!=='mar'){ pintarFondoMundo(TEMA); buildScape(); } }catch(e){}
 }
 app.renderer.on('resize', onResize); onResize();
 
@@ -657,14 +684,17 @@ cineGlow.visible=false;
 
 /* ----- Escenografía de fondo (cambia con el cuento) ----- */
 const cineBg=new PIXI.Container(); cinemaLayer.addChildAt(cineBg,0);
+const bgBase=new PIXI.Graphics(); cineBg.addChild(bgBase);
 const bgTint=new PIXI.Graphics(); cineBg.addChild(bgTint);
 const reef=new PIXI.Container(); cineBg.addChild(reef);
 const drift=new PIXI.Container(); cineBg.addChild(drift);
 const cave=new PIXI.Container(); cineBg.addChild(cave);
+const cineHole=new PIXI.Graphics(); cinemaLayer.addChild(cineHole); cineHole.visible=false;
+let holeActive=false, holeRole=null, holeDust=[];
 let bgMode='arrecife', bgT=0, bgEnter=0;
 function buildScape(){ if(TEMA==='espacio') buildScapeEspacio(); else if(TEMA==='oeste') buildScapeOeste(); else buildScapeMar(); }
 function buildScapeMar(){
-  reef.removeChildren(); drift.removeChildren(); cave.removeChildren();
+  reef.removeChildren(); drift.removeChildren(); cave.removeChildren(); bgBase.clear();
   const w=W(), h=H();
   const cols=[0xff6b6b,0xffa94d,0xffd43b,0x9775fa,0x4dabf7,0x69db7c,0xf783ac];
   for(let i=0;i<8;i++){ const g=new PIXI.Graphics(); const col=cols[i%cols.length]; const hh=70+((i*53)%90);
@@ -682,7 +712,7 @@ function buildScapeMar(){
 }
 function buildScapeEspacio(){
   reef.removeChildren(); drift.removeChildren(); cave.removeChildren();
-  const w=W(),h=H();
+  const w=W(),h=H(); paintGrad(bgBase,w,h,GRAD.espacio);
   for(let i=0;i<90;i++){ const g=new PIXI.Graphics(); const r=1+Math.random()*2.4; g.beginFill(0xffffff,1).drawCircle(0,0,r).endFill(); g.x=Math.random()*w; g.y=Math.random()*h*0.96; g.kind='star'; g.b=0.5+Math.random()*0.5; g.ph=Math.random()*6.28; g.alpha=g.b; reef.addChild(g); }
   const pl=new PIXI.Graphics(); pl.kind='planeta';
   pl.beginFill(0xc89bff,1).drawCircle(0,0,92).endFill();
@@ -724,7 +754,7 @@ function setScapeEspacio(mode){
 }
 function buildScapeOeste(){
   reef.removeChildren(); drift.removeChildren(); cave.removeChildren();
-  const w=W(),h=H(); const ground=h*0.72;
+  const w=W(),h=H(); const ground=h*0.72; paintGrad(bgBase,w,h,GRAD.oeste);
   const fl=new PIXI.Graphics(); fl.kind='terreno'; fl.beginFill(0xe3b873,1).drawRect(0,ground,w,h-ground).endFill(); fl.beginFill(0xd6a45c,1).drawRect(0,ground,w,16).endFill(); reef.addChild(fl);
   [[0.13,170,110],[0.5,232,150],[0.83,150,96]].forEach(([px,bw,bh])=>{ const g=new PIXI.Graphics(); g.kind='terreno'; const x=w*px; g.beginFill(0xb8531f,1).drawRoundedRect(x-bw/2,ground-bh,bw,bh,20).endFill(); g.beginFill(0x9c4419,1).drawRect(x-bw/2,ground-bh*0.34,bw,9).endFill(); reef.addChild(g); });
   [[0.30,0.92],[0.68,0.86]].forEach(([px,sc])=>{ const g=new PIXI.Graphics(); g.kind='terreno'; const x=w*px; g.beginFill(0x4f9a3d,1).drawRoundedRect(x-12*sc,ground-120*sc,24*sc,120*sc,12).drawRoundedRect(x-44*sc,ground-90*sc,20*sc,46*sc,10).drawRoundedRect(x+24*sc,ground-100*sc,20*sc,52*sc,10).endFill(); reef.addChild(g); });
@@ -1050,10 +1080,10 @@ const GUION_OESTE=[
  {mode:'cruce', star:'coyote', speaker:'coyote', txt:'Pero Aullido, el coyote astuto, lo alcanzaba a paso ligero.', dur:9000, bg:'desierto'},
  {mode:'grupo', txt:'Y atrás, resoplando, venía la locomotora Chucu: ¡chucu-chucu!', dur:8500, bg:'desierto', star:'tren'},
  {mode:'solo', star:'cactus', speaker:'cactus', txt:'El sol picaba fuerte. Pinchón les dio sombra y un sorbo de agua fresca.', dur:9500, bg:'desierto', fx:'brilla'},
- {mode:'grupo', txt:'De pronto… ¡PUM! El toro Cuernos tropezó y cayó en un hoyo.', dur:9000, bg:'desierto', fx:'temblor', star:'toro'},
- {mode:'solo', star:'toro', speaker:'toro', txt:'«¡Ay! No puedo salir solo de aquí…», dijo Cuernos, triste.', dur:9000, bg:'desierto'},
- {mode:'solo', star:'caballo', speaker:'caballo', txt:'Trueno iba ganando… pero frenó. ¿Seguir, o ayudar a su amigo?', dur:9500, bg:'desierto'},
- {mode:'grupo', txt:'Trueno regresó y, con un fuerte tirón, sacó a Cuernos del hoyo.', dur:9000, bg:'desierto', fx:'brilla', star:'caballo'},
+ {mode:'grupo', txt:'De pronto… ¡PUM! El toro Cuernos tropezó y cayó en un hoyo.', dur:9000, bg:'desierto', fx:'cae', star:'toro'},
+ {mode:'solo', star:'toro', speaker:'toro', txt:'«¡Ay! No puedo salir solo de aquí…», dijo Cuernos, triste.', dur:9000, bg:'desierto', fx:'cae'},
+ {mode:'solo', star:'caballo', speaker:'caballo', txt:'Trueno iba ganando… pero frenó. ¿Seguir, o ayudar a su amigo?', dur:9500, bg:'desierto', fx:'cae'},
+ {mode:'grupo', txt:'Trueno regresó y, con un fuerte tirón, sacó a Cuernos del hoyo.', dur:9000, bg:'desierto', fx:'sale', star:'caballo'},
  {mode:'grupo', txt:'Y siguieron juntos, ahora hacia el gran cañón rojo.', dur:8500, bg:'canon', star:'caballo'},
  {mode:'viaje', txt:'El cañón era estrecho, alto y lleno de rocas.', dur:8500, bg:'canon'},
  {mode:'solo', star:'aguila', speaker:'aguila', txt:'Alas voló bien alto y desde el cielo les mostró el camino seguro.', dur:9500, bg:'canon', fx:'brilla'},
@@ -1103,7 +1133,8 @@ function cargarMundo(id){
   document.body.classList.toggle('espacio', m.tema==='espacio');
   document.body.classList.toggle('oeste', m.tema==='oeste');
   const noMar=(m.tema!=='mar');
-  plantLayer.visible=!noMar; planktonLayer.visible=!noMar;
+  depthLayer.visible=!noMar; bubbleLayer.visible=!noMar; plantLayer.visible=!noMar; planktonLayer.visible=!noMar;
+  pintarFondoMundo(m.tema);
   buildScape();
   preloadCine();
 }
@@ -1174,6 +1205,15 @@ function applyScene(i){
     else if(s.mode==='cruce') an=(r===star)?'cruza':'nada';
     else if(s.mode==='fiesta'||s.mode==='fin') an='salta';
     a.anim=an; });
+  /* ----- Caída en un hueco (fx 'cae' enciende, fx 'sale' apaga) ----- */
+  if(s.fx==='cae'){ holeActive=true; holeRole=star||speaker; }
+  else if(s.fx==='sale'){ holeActive=false; holeRole=null; }
+  if(holeActive && actors[holeRole]){
+    const hx=W()*0.5, hy=H()*0.74;
+    cineHole.visible=true;
+    const a=actors[holeRole]; a.set(hx, hy-2, 0.58, 0); a.anim='nada';
+    if(!holeDust.length){ for(let k=0;k<16;k++){ holeDust.push({x:hx+(Math.random()-0.5)*180,y:hy,vx:(Math.random()-0.5)*5,vy:-3-Math.random()*5,life:600+Math.random()*500}); } }
+  } else { holeActive=false; cineHole.visible=false; holeDust=[]; }
   applyAudio(s);
   speak(curSubText, sceneToken);
 }
@@ -1189,7 +1229,7 @@ async function startCinema(){
   applyScene(0);
 }
 function stopCinema(){
-  cineActive=false; cinemaLayer.visible=false; cinePearl.visible=false; cineGlow.visible=false; cineDark.clear(); cineRings.clear();
+  cineActive=false; cinemaLayer.visible=false; cinePearl.visible=false; cineGlow.visible=false; cineDark.clear(); cineRings.clear(); holeActive=false; holeRole=null; holeDust=[]; cineHole.visible=false;
   if(synth){ try{ synth.cancel(); }catch(e){} } audioSuspend();
   document.getElementById('cinema').classList.remove('show');
   document.getElementById('cineCredits').classList.remove('show');
@@ -1206,7 +1246,16 @@ window.__cineTick=function(d){
   cineRings.clear();
   if(ringsOn && glowRole && actors[glowRole]){ const a=actors[glowRole]; ringT+=d; for(let k=0;k<3;k++){ const ph=((ringT*0.018)+(k/3))%1; cineRings.lineStyle(3,0x9fffe9,(1-ph)*0.5); cineRings.drawCircle(a.sprite.x,a.sprite.y,40+ph*220);} }
   if(cinePearl.visible){ const b=cinePearl.baseScale||1.2; cinePearl.scale.set(b*(1+Math.sin(performance.now()*0.004)*0.10)); }
-  cinemaLayer.x=(curScene&&curScene.fx==='temblor')?(Math.random()-0.5)*8:0;
+  cinemaLayer.x=(curScene&&(curScene.fx==='temblor'||holeActive))?(Math.random()-0.5)*(holeActive?15:8):0;
+  if(holeActive){
+    const hx=W()*0.5, hy=H()*0.74;
+    cineHole.clear();
+    cineHole.beginFill(0x120a04,1).drawEllipse(hx,hy,165,58).endFill();
+    cineHole.beginFill(0x2c1a0c,1).drawEllipse(hx,hy-7,150,46).endFill();
+    cineHole.lineStyle(9,0x5a3a1a,1).drawEllipse(hx,hy,168,60); cineHole.lineStyle(0);
+    holeDust.forEach(p=>{ p.x+=p.vx*d*0.12; p.y+=p.vy*d*0.12; p.vy+=0.05*d; p.life-=d; if(p.life>0){ const al=Math.max(0,Math.min(0.7,p.life/700)); cineHole.beginFill(0xd9b88a,al).drawCircle(p.x,p.y,4+(1-al)*4).endFill(); } });
+    if(holeDust.length && holeDust.every(p=>p.life<=0)) holeDust=[];
+  }
   bgT+=d;
   if(TEMA==='espacio'){
     for(const c of reef.children){ if(c.kind==='star'){ c.alpha=c.b*(0.55+0.45*Math.sin(bgT*0.05+c.ph)); } }
