@@ -658,8 +658,9 @@ class Actor{
   constructor(role, texture, kid){
     this.role=role; this.kid=kid||'';
     this.sprite=new PIXI.Sprite(texture||PIXI.Texture.WHITE); this.sprite.anchor.set(.5);
-    this.x=this.tx=W()/2; this.y=this.ty=H()*1.4; this.lastx=this.x; this._f=1;
+    this.x=this.tx=W()/2; this.y=this.ty=H()*1.4; this.lastVis=this.x; this._f=1;
     this.sc=this.tsc=1; this.av=0; this.tav=0; this.t=Math.random()*100; this._tint=0xffffff; this.bob=8; this.talk=0;
+    this.anim='nada'; this.phase=Math.random()*6.28;
     this.sprite.alpha=0; cinemaLayer.addChild(this.sprite);
     this.label=null;
     if(this.kid){ this.label=new PIXI.Text(this.kid, cineNameStyle); this.label.anchor.set(.5,0); this.label.alpha=0; cinemaLayer.addChild(this.label); }
@@ -670,16 +671,24 @@ class Actor{
   render(){
     const tp=this.talk>0?(1+Math.sin(this.t*0.5)*0.05):1;
     const s=this.fit()*this.sc*tp;
+    let ox=0, oy=0, rot=Math.sin(this.t*0.03)*0.05;
+    switch(this.anim){
+      case 'nada': ox=Math.sin(this.t*0.02+this.phase)*30; break;
+      case 'avanza': ox=Math.sin(this.t*0.02+this.phase)*24; oy=Math.cos(this.t*0.018+this.phase)*10; break;
+      case 'cruza': ox=Math.sin(this.t*0.012)*W()*0.17; break;
+      case 'salta': oy=-Math.abs(Math.sin(this.t*0.09+this.phase))*28; break;
+      case 'gira': ox=Math.sin(this.t*0.03)*16; rot=Math.sin(this.t*0.05)*0.13; break;
+    }
+    const vx=this.x+ox, vy=this.y+Math.sin(this.t*0.05)*this.bob+oy;
+    if(Math.abs(vx-this.lastVis)>0.4) this._f=(vx-this.lastVis)>0?1:-1; this.lastVis=vx;
     this.sprite.scale.set(s*this._f, s);
-    this.sprite.x=this.x; this.sprite.y=this.y+Math.sin(this.t*0.05)*this.bob;
-    this.sprite.rotation=Math.sin(this.t*0.03)*0.05; this.sprite.alpha=this.av; this.sprite.tint=this._tint;
-    if(this.label){ this.label.x=this.x; this.label.y=this.y+Math.abs(this.sprite.height)/2+6; this.label.alpha=this.av*0.95; this.label.scale.set(Math.min(1,Math.max(.5,this.sc))); }
+    this.sprite.x=vx; this.sprite.y=vy; this.sprite.rotation=rot; this.sprite.alpha=this.av; this.sprite.tint=this._tint;
+    if(this.label){ this.label.x=vx; this.label.y=vy+Math.abs(this.sprite.height)/2+6; this.label.alpha=this.av*0.95; this.label.scale.set(Math.min(1,Math.max(.5,this.sc))); }
   }
   update(d){
     this.t+=d;
     this.x+=(this.tx-this.x)*0.06*d; this.y+=(this.ty-this.y)*0.06*d;
     this.sc+=(this.tsc-this.sc)*0.07*d; this.av+=(this.tav-this.av)*0.10*d;
-    const dx=this.x-this.lastx; this.lastx=this.x; if(Math.abs(dx)>0.2) this._f=dx>0?1:-1;
     this.render();
   }
 }
@@ -893,6 +902,12 @@ function applyScene(i){
   if(showPearl){ cinePearl.x=W()*0.5; cinePearl.y=(s.mode==='fin'||s.mode==='fiesta')?H()*0.16:(s.mode==='circulo'?H()*0.48:H()*0.20); cinePearl.baseScale=(s.mode==='fin')?2.4:(s.mode==='circulo'?1.5:1.2); }
   glowRole=(s.fx==='brilla'||s.fx==='canta'||s.fx==='corte'||s.mode==='oscuridad')?(speaker||star):null;
   ringsOn=(s.fx==='canta');
+  ROLES.forEach(r=>{ const a=actors[r]; if(!a)return; let an='nada';
+    if(s.mode==='presenta'&&r===s.present) an='gira';
+    else if(s.mode==='viaje') an='avanza';
+    else if(s.mode==='cruce') an=(r===star)?'cruza':'nada';
+    else if(s.mode==='fiesta'||s.mode==='fin') an='salta';
+    a.anim=an; });
   applyAudio(s);
   speak(curSubText, sceneToken);
 }
