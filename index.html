@@ -1197,12 +1197,15 @@ function applyScene(i){
   if(!bg){ if(s.fx==='gris') bg='apagado'; else if(s.mode==='cruce') bg='corriente'; else if(s.mode==='viaje') bg='viaje'; else if(s.fx==='color'||s.mode==='fiesta'||s.mode==='fin') bg='fiesta'; else if(s.fx==='dark'||s.mode==='oscuridad') bg='cueva'; else bg='arrecife'; }
   setScape(bg);
   ROLES.forEach(r=>{ if(!actors[r])return; let tc=0xffffff; if(s.fx==='gris')tc=0x9aa6ad; else if(bg==='cueva'||bg==='entrada'||bg==='polvo'||bg==='polvareda'){ tc=(r===(speaker||star))?0xffffff:0x5b6b79; } actors[r].tint(tc); });
-  /* ----- Ambientes 3D según el mundo y la escena ----- */
+  /* ----- Ambientes 3D: solo en viajes/entradas. Los primeros planos (un personaje actuando) van en 2D para ver la acción y los brillos. ----- */
   if(window.Env3D){
+    const foco=(s.mode==='solo'||s.mode==='duo');
     let preset=null;
-    if(TEMA==='mar'){ if(bg==='cueva'||bg==='entrada') preset='cueva'; }
-    else if(TEMA==='espacio'){ if(bg==='viaje'||bg==='planeta'||bg==='luna'||bg==='lluvia'||bg==='polvo'||bg==='mirador') preset='espacio'; }
-    else if(TEMA==='oeste'){ if(bg==='canon'||bg==='polvareda') preset='canon'; }
+    if(!foco){
+      if(TEMA==='mar'){ if(bg==='entrada') preset='cueva'; }
+      else if(TEMA==='espacio'){ if(bg==='viaje'||bg==='planeta'||bg==='luna'||bg==='lluvia'||bg==='polvo'||bg==='mirador') preset='espacio'; }
+      else if(TEMA==='oeste'){ if(bg==='canon'||bg==='polvareda') preset='canon'; }
+    }
     if(preset){ const urls=ROLES.map(r=>FALLBACK&&FALLBACK[r]).filter(Boolean); window.Env3D.show(preset,urls); window.Env3D.focus(ROLES.indexOf(speaker||star)); }
     else window.Env3D.hide();
   }
