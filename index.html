@@ -275,16 +275,36 @@ function pintarFondoMundo(tema){
   if(tema==='mar'){ worldBg.visible=false; return; }
   worldBg.visible=true; paintGrad(worldGrad,w,h,GRAD[tema]||GRAD.mar);
   if(tema==='espacio'){
+    const ncl=[0x6f4fb0,0x4a6fb0,0xb05f8a];
+    for(let i=0;i<4;i++){ const g=new PIXI.Graphics(); g.beginFill(ncl[i%ncl.length],0.10).drawEllipse(0,0,220+Math.random()*160,120+Math.random()*90).endFill(); g.x=Math.random()*w; g.y=Math.random()*h*0.8; g.rotation=Math.random()*3; worldArt.addChild(g); }
     for(let i=0;i<140;i++){ const g=new PIXI.Graphics(); const r=1+Math.random()*2.3; g.beginFill(0xffffff,0.5+Math.random()*0.5).drawCircle(0,0,r).endFill(); g.x=Math.random()*w; g.y=Math.random()*h; g.kind='star'; g.b=g.alpha; g.ph=Math.random()*6.28; worldArt.addChild(g); }
-    const p1=new PIXI.Graphics(); p1.beginFill(0x6f4fb0,0.55).drawCircle(0,0,72).endFill(); p1.beginFill(0x8a63d6,0.5).drawCircle(-20,-16,14).endFill(); p1.x=w*0.15; p1.y=h*0.22; worldArt.addChild(p1);
-    const p2=new PIXI.Graphics(); p2.beginFill(0x4a6fb0,0.45).drawCircle(0,0,42).endFill(); p2.x=w*0.86; p2.y=h*0.15; worldArt.addChild(p2);
+    const p1=new PIXI.Graphics(); p1.beginFill(0x6f4fb0,0.55).drawCircle(0,0,72).endFill(); p1.beginFill(0x8a63d6,0.5).drawCircle(-20,-16,14).endFill(); p1.x=w*0.15; p1.y=h*0.22; p1.kind='planeta'; p1.by=p1.y; p1.ph=0; worldArt.addChild(p1);
+    const p2=new PIXI.Graphics(); p2.beginFill(0x4a6fb0,0.45).drawCircle(0,0,42).endFill(); p2.x=w*0.86; p2.y=h*0.15; p2.kind='planeta'; p2.by=p2.y; p2.ph=2.6; worldArt.addChild(p2);
   } else if(tema==='oeste'){
     const ground=h*0.72;
     const sun=new PIXI.Graphics(); sun.beginFill(0xfff3cf,0.45).drawCircle(0,0,118).endFill(); sun.beginFill(0xffe7a0,0.96).drawCircle(0,0,72).endFill(); sun.x=w*0.78; sun.y=h*0.20; worldArt.addChild(sun);
+    for(let i=0;i<4;i++){ const g=new PIXI.Graphics(); g.beginFill(0xffffff,0.72); const cw=60+Math.random()*70; g.drawEllipse(0,0,cw,cw*0.34); g.drawEllipse(-cw*0.5,cw*0.12,cw*0.55,cw*0.24); g.drawEllipse(cw*0.5,cw*0.10,cw*0.5,cw*0.22); g.endFill(); g.x=Math.random()*w; g.y=h*(0.08+Math.random()*0.18); g.kind='nube'; g.spd=0.4+Math.random()*0.5; worldArt.addChild(g); }
+    for(let i=0;i<3;i++){ const g=new PIXI.Graphics(); g.lineStyle(3.5,0x4a3020,0.85); g.moveTo(-14,0).quadraticCurveTo(-7,-8,0,0).quadraticCurveTo(7,-8,14,0); g.x=Math.random()*w; g.y=h*(0.10+Math.random()*0.16); g.kind='ave'; g.spd=0.5+Math.random()*0.6; g.ph=Math.random()*6.28; g.by=g.y; worldArt.addChild(g); }
     [[0.15,150,92],[0.46,212,132],[0.8,140,82]].forEach(([px,bw,bh])=>{ const g=new PIXI.Graphics(); g.beginFill(0xb8531f,0.92).drawRoundedRect(w*px-bw/2,ground-bh,bw,bh,18).endFill(); g.beginFill(0x9c4419,0.9).drawRect(w*px-bw/2,ground-bh*0.36,bw,9).endFill(); worldArt.addChild(g); });
     const fl=new PIXI.Graphics(); fl.beginFill(0xe3b873,1).drawRect(0,ground,w,h-ground).endFill(); fl.beginFill(0xcea055,1).drawRect(0,ground,w,14).endFill(); worldArt.addChild(fl);
+    for(let i=0;i<2;i++){ const g=new PIXI.Graphics(); const rr=16+Math.random()*10; g.lineStyle(3.5,0x9c6b34,0.9); g.drawCircle(0,0,rr); g.moveTo(-rr,0).lineTo(rr,0); g.moveTo(0,-rr).lineTo(0,rr); g.moveTo(-rr*0.7,-rr*0.7).lineTo(rr*0.7,rr*0.7); g.x=Math.random()*w; g.y=ground+8+Math.random()*(h-ground-20); g.kind='rodadora'; g.gy=g.y; g.spd=0.9+Math.random()*0.8; worldArt.addChild(g); }
   }
 }
+
+/* ---------- Peces lejanos (siluetas de fondo, solo mar) ---------- */
+const farLayer=new PIXI.Container(); app.stage.addChildAt(farLayer, app.stage.getChildIndex(depthLayer));
+const farFish=[];
+function makeFarFish(){
+  const g=new PIXI.Graphics(); const s=8+Math.random()*10;
+  g.beginFill(0x06293a,0.5).drawEllipse(0,0,s,s*0.45)
+   .moveTo(-s,0).lineTo(-s-s*0.7,-s*0.45).lineTo(-s-s*0.7,s*0.45).closePath().endFill();
+  g.x=Math.random()*W(); g.by=H()*(0.12+Math.random()*0.55); g.y=g.by;
+  g.vx=(0.25+Math.random()*0.5)*(Math.random()<0.5?1:-1);
+  g.ph=Math.random()*6.28; g.scale.x=g.vx>0?1:-1;
+  farLayer.addChild(g); farFish.push(g);
+}
+for(let i=0;i<(reduceMotion?5:14);i++) makeFarFish();
+let shootTimer=280; const shoots=[];
 
 /* ---------- Profundidad (oscurecimiento inferior) ---------- */
 const gcan=document.createElement('canvas'); gcan.width=8; gcan.height=512;
@@ -406,7 +426,7 @@ class Creature{
       labelLayer.addChild(this.label);
     }
   }
-  applyScale(s){ this.cont.scale.set(s); }
+  applyScale(s){ this._s=s; }
   update(d){
     this.t+=d;
     if(this.spawnT<1){
@@ -423,7 +443,7 @@ class Creature{
 
     // avance horizontal + deriva vertical orgánica
     this.cont.x += this.dir*this.speed*d;
-    const halfW=this.sprite.width*0.5;
+    const halfW=this.sprite.width*0.5*(this._s||this.baseScale);
     if(this.cont.x>W()+halfW) this.dir=-1;
     if(this.cont.x<-halfW) this.dir=1;
     const vy=(Math.sin(this.t*this.f1)*this.amp1 + Math.sin(this.t*this.f2)*this.amp2)*(reduceMotion?0.4:1);
@@ -431,8 +451,12 @@ class Creature{
     this.baseY=Math.max(H()*0.10, Math.min(H()*0.80, this.baseY));
     this.cont.y=this.baseY+Math.sin(this.t*this.bobSpeed)*4;
 
-    // orientación: mira hacia donde nada + se inclina con la subida/bajada
-    this.cont.scale.x=Math.abs(this.cont.scale.x)*this.dir;
+    // orientación: giro suave al voltearse (pasa por perfil delgado) + ondulación de nado
+    if(this.face===undefined) this.face=this.dir;
+    this.face+=(this.dir-this.face)*Math.min(1,0.07*d);
+    const fx=Math.max(0.10,Math.abs(this.face))*(this.face<0?-1:1);
+    const pulse=reduceMotion?1:(1+Math.sin(this.t*this.bobSpeed*2.2)*0.05);
+    this.cont.scale.set((this._s||this.baseScale)*fx, (this._s||this.baseScale)*pulse);
     const tilt=Math.max(-0.42,Math.min(0.42,vy*0.45));
     const wig=Math.sin(this.t*this.bobSpeed)*this.wiggle;
     this.cont.rotation=(tilt*this.dir)+wig;
@@ -467,9 +491,10 @@ class Creature{
   }
 }
 
+let ACCENT=0x2ee6cf; // color de chispas según el mundo activo
 function splash(x,y){
   for(let i=0;i<16;i++){
-    const g=new PIXI.Graphics(); g.beginFill(0x2ee6cf,.9).drawCircle(0,0,2+Math.random()*3).endFill();
+    const g=new PIXI.Graphics(); g.beginFill(ACCENT,.9).drawCircle(0,0,2+Math.random()*3).endFill();
     g.x=x; g.y=y; const a=Math.random()*6.28, sp=2+Math.random()*4.5;
     g.vx=Math.cos(a)*sp; g.vy=Math.sin(a)*sp; g.life=1; fxLayer.addChild(g);
     const step=()=>{ g.x+=g.vx; g.y+=g.vy; g.vx*=0.92; g.vy*=0.92; g.life-=0.03; g.alpha=g.life; g.scale.set(g.life);
@@ -507,6 +532,36 @@ app.ticker.add((d)=>{
     }
   }
   for(const c of creatures) c.update(d);
+  // vida ambiental del mundo activo
+  if(farLayer.visible){
+    for(const f of farFish){ f.ph+=0.012*d; f.x+=f.vx*d; f.y=f.by+Math.sin(f.ph)*9;
+      if(f.vx>0 && f.x>W()+40) f.x=-40; if(f.vx<0 && f.x<-40) f.x=W()+40; }
+  }
+  if(worldBg.visible){
+    const tt=performance.now();
+    if(TEMA==='espacio'){
+      for(const c of worldArt.children){
+        if(c.kind==='star') c.alpha=c.b*(0.55+0.45*Math.sin(tt*0.0016+c.ph));
+        else if(c.kind==='planeta') c.y=c.by+Math.sin(tt*0.0004+c.ph)*8;
+      }
+      shootTimer-=d;
+      if(shootTimer<=0 && !reduceMotion){
+        shootTimer=280+Math.random()*520;
+        const g=new PIXI.Graphics();
+        g.lineStyle(2.5,0xffffff,0.85).moveTo(0,0).lineTo(46,-14); g.beginFill(0xffffff,1).drawCircle(46,-14,2.6).endFill();
+        g.x=Math.random()*W()*0.8; g.y=H()*(0.05+Math.random()*0.3); g.vx=3.2+Math.random()*2; g.vy=-1+Math.random()*0.5;
+        worldArt.addChild(g); shoots.push(g);
+      }
+      for(let i=shoots.length-1;i>=0;i--){ const s=shoots[i]; s.x+=s.vx*d; s.y+=s.vy*d; s.alpha-=0.02*d;
+        if(s.alpha<=0){ worldArt.removeChild(s); s.destroy(); shoots.splice(i,1); } }
+    } else if(TEMA==='oeste'){
+      for(const c of worldArt.children){
+        if(c.kind==='nube'){ c.x+=c.spd*d*0.35; if(c.x>W()+180) c.x=-180; }
+        else if(c.kind==='ave'){ c.ph+=0.03*d; c.x+=c.spd*d*0.9; c.y=c.by+Math.sin(c.ph*0.6)*14; c.scale.y=0.7+Math.abs(Math.sin(c.ph))*0.5; if(c.x>W()+60){ c.x=-60; c.by=H()*(0.08+Math.random()*0.2); } }
+        else if(c.kind==='rodadora'){ c.x+=c.spd*d*1.7; c.rotation+=0.03*d*c.spd; c.y=c.gy-Math.abs(Math.sin(c.rotation*1.4))*7; if(c.x>W()+60) c.x=-60; }
+      }
+    }
+  }
   if(window.__cineTick) window.__cineTick(d);
 });
 
@@ -685,6 +740,11 @@ cinePearl.visible=false;
 (function(){ const g=new PIXI.Graphics(); for(let i=8;i>=1;i--){ g.beginFill(0x9fffe9, 0.045).drawCircle(0,0,20*i).endFill(); } cineGlow.addChild(g); })();
 cineGlow.visible=false;
 
+/* ----- Confeti de fiesta (cine) ----- */
+const cineFx=new PIXI.Container(); cinemaLayer.addChild(cineFx);
+const confetti=[]; const CONF_COLS=[0xff5d5d,0xffd23f,0x4dabf7,0x69db7c,0xf783ac,0x2ee6cf];
+function limpiarConfeti(){ confetti.forEach(g=>{ cineFx.removeChild(g); g.destroy(); }); confetti.length=0; }
+
 /* ----- Escenografía de fondo (cambia con el cuento) ----- */
 const cineBg=new PIXI.Container(); cinemaLayer.addChildAt(cineBg,0);
 const bgBase=new PIXI.Graphics(); cineBg.addChild(bgBase);
@@ -818,8 +878,10 @@ class Actor{
       case 'avanza': ox=Math.sin(this.t*0.02+this.phase)*24; oy=Math.cos(this.t*0.018+this.phase)*10; break;
       case 'cruza': ox=Math.sin(this.t*0.012)*W()*0.17; break;
       case 'salta': oy=-Math.abs(Math.sin(this.t*0.09+this.phase))*28; break;
+      case 'baila': oy=-Math.abs(Math.sin(this.t*0.09+this.phase))*26; ox=Math.sin(this.t*0.045+this.phase)*18; rot=Math.sin(this.t*0.07+this.phase)*0.16; break;
       case 'gira': ox=Math.sin(this.t*0.03)*16; rot=Math.sin(this.t*0.05)*0.13; break;
     }
+    if(this.talk>0){ rot+=Math.sin(this.t*0.28)*0.05; oy-=Math.abs(Math.sin(this.t*0.22))*6; }
     const vx=this.x+ox, vy=this.y+Math.sin(this.t*0.05)*this.bob+oy;
     if(Math.abs(vx-this.lastVis)>0.4) this._f=(vx-this.lastVis)>0?1:-1; this.lastVis=vx;
     this.sprite.scale.set(s*this._f, s);
@@ -837,32 +899,67 @@ class Actor{
 let actors={}, cineActive=false, scene=0, sceneStart=0, cinePaused=false, pausedElapsed=0;
 let curScene=null, glowRole=null, ringsOn=false, ringT=0;
 
-/* ----- Narración por voz (español) ----- */
+/* ----- Narración por voz (español, con voz propia para cada personaje) ----- */
 const synth = window.speechSynthesis || null;
 let esVoice=null, narrOn=true, audioOn=true, sceneToken=0, curSubText='';
 function pickVoice(){ if(!synth) return; const vs=synth.getVoices()||[];
-  esVoice = vs.find(v=>/^es/i.test(v.lang) && /(Paulina|Sabina|Mónica|Monica|Helena|Laura|Google español)/i.test(v.name))
-        || vs.find(v=>/es-(MX|US|419|AR|CO|PE)/i.test(v.lang))
-        || vs.find(v=>/^es/i.test(v.lang)) || null;
+  const score=v=>{ if(!/^es/i.test(v.lang)) return -1; let s=0;
+    if(/es-(MX|US|419)/i.test(v.lang)) s+=4; else if(/es-(AR|CO|PE|CL)/i.test(v.lang)) s+=3;
+    if(/Google/i.test(v.name)) s+=3;
+    if(/(Paulina|Sabina|Mónica|Monica|Dalia|Helena|Laura|Lucia|Lucía|Camila)/i.test(v.name)) s+=3;
+    if(/natural|neural|online/i.test(v.name)) s+=2;
+    if(v.localService===false) s+=1;
+    return s; };
+  esVoice = vs.map(v=>[score(v),v]).filter(a=>a[0]>=0).sort((a,b)=>b[0]-a[0]).map(a=>a[1])[0] || null;
 }
 if(synth){ pickVoice(); try{ synth.addEventListener('voiceschanged', pickVoice); }catch(e){} }
+/* Chrome pausa la síntesis en frases largas: mantenerla despierta */
+setInterval(()=>{ try{ if(synth && synth.speaking && !synth.paused) synth.resume(); }catch(e){} }, 4000);
+
+/* Perfil [pitch, rate] de cada personaje: así los diálogos «…» suenan distintos al narrador */
+const VOCES={
+  mar:{ pez:[1.45,1.02], medusa:[1.35,0.90], estrella:[1.52,0.96], pulpo:[1.05,0.94], caballito:[1.55,1.14], tortuga:[0.82,0.78], cangrejo:[1.02,1.06], ballena:[0.62,0.76] },
+  espacio:{ cohete:[1.32,1.12], astronauta:[1.00,0.96], alien:[1.58,1.06], robot:[0.72,0.88], planeta:[0.68,0.80], estrella:[1.52,0.98], luna:[1.25,0.86], ovni:[1.45,1.16] },
+  oeste:{ vaquero:[1.00,0.98], caballo:[1.12,1.06], sheriff:[0.80,0.90], cactus:[1.22,0.95], aguila:[1.30,1.00], coyote:[1.16,1.10], toro:[0.66,0.84], tren:[0.92,1.08] },
+};
+function vozDe(role){ const t=VOCES[TEMA]||{}; return (role && t[role])||null; }
+function limpiaTexto(t){ return t.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}]/gu,'').replace(/«|»/g,'').trim(); }
+function segmentar(txt){
+  // separa narración y diálogos «…» para darles voz propia
+  const segs=[]; const re=/«([^»]+)»/g; let last=0,m;
+  while((m=re.exec(txt))){
+    if(m.index>last) segs.push({t:txt.slice(last,m.index),dlg:false});
+    segs.push({t:m[1],dlg:true}); last=re.lastIndex;
+  }
+  if(last<txt.length) segs.push({t:txt.slice(last),dlg:false});
+  return segs.map(s=>({dlg:s.dlg,t:limpiaTexto(s.t)})).filter(s=>s.t.length>1);
+}
 function speak(txt, token){
   if(!synth || !narrOn || !txt) return;
   try{ synth.cancel(); }catch(e){}
-  const clean = txt.replace(/[✨🎉🌟✏️🔊🔇🗣️🎵]/g,'').replace(/«|»/g,'"').trim();
-  if(!clean) return;
-  const u=new SpeechSynthesisUtterance(clean);
-  let rate=0.82, pitch=1.18;
+  let rate=0.84, pitch=1.18;
   if(curScene){
-    if(curScene.mode==='presenta'){ rate=0.86; pitch=1.30; }
-    else if(curScene.mode==='fiesta'||curScene.mode==='fin'){ rate=0.90; pitch=1.28; }
+    if(curScene.mode==='presenta'){ rate=0.88; pitch=1.30; }
+    else if(curScene.mode==='fiesta'||curScene.mode==='fin'){ rate=0.92; pitch=1.28; }
     else if(curScene.mode==='titulo'){ rate=0.84; pitch=1.22; }
     else if(curScene.fx==='gris'||curScene.fx==='dark'||curScene.mode==='oscuridad'){ rate=0.78; pitch=1.08; }
     else if(curScene.fx==='canta'||curScene.fx==='perla'||curScene.fx==='brilla'){ rate=0.80; pitch=1.12; }
   }
-  if(esVoice) u.voice=esVoice; u.lang=(esVoice&&esVoice.lang)||'es-ES'; u.rate=rate; u.pitch=pitch; u.volume=1;
-  u.onend=()=>{ if(cineActive && !cinePaused && token===sceneToken && narrOn) setTimeout(()=>{ if(cineActive && !cinePaused && token===sceneToken) nextScene(); }, 1300); };
-  try{ synth.speak(u); }catch(e){}
+  const perfil=curScene?vozDe(curScene.speaker||curScene.star):null;
+  const segs=segmentar(txt); if(!segs.length) return;
+  const fin=()=>{ if(cineActive && !cinePaused && token===sceneToken && narrOn) setTimeout(()=>{ if(cineActive && !cinePaused && token===sceneToken) nextScene(); }, 1200); };
+  const habla=(i)=>{
+    if(token!==sceneToken || !narrOn) return;
+    if(i>=segs.length){ fin(); return; }
+    const s=segs[i]; const u=new SpeechSynthesisUtterance(s.t);
+    if(esVoice) u.voice=esVoice; u.lang=(esVoice&&esVoice.lang)||'es-ES'; u.volume=1;
+    if(s.dlg && perfil){ u.pitch=Math.min(2,perfil[0]); u.rate=perfil[1]; }
+    else { u.pitch=pitch; u.rate=rate; }
+    u.onend=()=>setTimeout(()=>habla(i+1), s.dlg?260:140);
+    u.onerror=()=>habla(i+1);
+    try{ synth.speak(u); }catch(e){ habla(i+1); }
+  };
+  habla(0);
 }
 
 /* ----- Sonido sintetizado (ambiente + efectos) ----- */
@@ -914,10 +1011,10 @@ const GUION_ACUARIO=[
  {mode:'titulo', txt:'VERONIX presenta', dur:5000},
  {mode:'titulo', txt:'✨ La Perla de Luz ✨', dur:7000, fx:'perla'},
  {mode:'titulo', txt:'Una aventura del fondo del mar', dur:6000},
- {mode:'grupo', txt:'En lo más hondo del océano había un arrecife lleno de vida y color.', dur:9000, star:null},
- {mode:'grupo', txt:'El sol del mediodía lo atravesaba en rayos dorados.', dur:8000, star:null},
- {mode:'grupo', txt:'Todos los animales del mar vivían allí, felices y en paz.', dur:8500, star:null},
- {mode:'titulo', txt:'Pero antes de empezar… conozcamos a nuestros héroes.', dur:6500},
+ {mode:'grupo', txt:'En lo más hondo del océano azul, donde el agua baila con la luz, había un arrecife lleno de vida y de color.', dur:9000, star:null},
+ {mode:'grupo', txt:'Los corales rojos, naranjas y violetas se mecían despacito, y el sol del mediodía bajaba en rayos dorados hasta la arena.', dur:8500, star:null},
+ {mode:'grupo', txt:'Allí vivían todos los animales del mar: grandes y chiquitos, veloces y tranquilos… y todos eran amigos.', dur:8500, star:null},
+ {mode:'titulo', txt:'Pero antes de empezar el cuento… ¡conozcamos a nuestros héroes!', dur:6500},
 
  {mode:'presenta', present:'pez', dur:12000},
  {mode:'presenta', present:'medusa', dur:12000},
@@ -928,56 +1025,56 @@ const GUION_ACUARIO=[
  {mode:'presenta', present:'cangrejo', dur:12000},
  {mode:'presenta', present:'ballena', dur:12000},
 
- {mode:'circulo', txt:'En el centro del arrecife brillaba la Perla de Luz.', dur:8500, fx:'perla'},
- {mode:'circulo', txt:'Su luz llenaba el mar de color y despertaba a todos cada mañana.', dur:9000, fx:'perla'},
- {mode:'titulo', txt:'Hasta que una noche… algo salió mal.', dur:6500},
- {mode:'titulo', txt:'La perla rodó por una grieta… y desapareció en la oscuridad.', dur:8000},
- {mode:'grupo', txt:'El mar se quedó frío, gris y silencioso.', dur:8000, fx:'gris', star:null},
- {mode:'grupo', txt:'Los peces chocaban entre ellos sin poder ver su camino.', dur:8000, fx:'gris', star:null},
- {mode:'solo', star:'pez', speaker:'pez', txt:'Nilo fue el primero en notar que la luz se había ido.', dur:8000, fx:'gris'},
- {mode:'solo', star:'pez', speaker:'pez', txt:'«¡Tenemos que encontrar la Perla de Luz!», gritó.', dur:8000, fx:'gris'},
- {mode:'duo', star:'pez', speaker:'caballito', txt:'«Yo llevaré el aviso a todo el arrecife», dijo Marino, veloz.', dur:9000, fx:'gris'},
- {mode:'grupo', txt:'Y uno a uno, todos los amigos respondieron al llamado.', dur:8000, fx:'gris', star:'pez'},
+ {mode:'circulo', txt:'En el centro del arrecife, sobre una roca antigua, brillaba la Perla de Luz.', dur:8500, fx:'perla'},
+ {mode:'circulo', txt:'Su resplandor pintaba el mar de mil colores y despertaba a todos con un cosquilleo tibio cada mañana.', dur:9000, fx:'perla'},
+ {mode:'titulo', txt:'Hasta que una noche, mientras todos dormían… algo salió mal.', dur:6500},
+ {mode:'titulo', txt:'La perla tembló, rodó por una grieta… y se perdió en la oscuridad más profunda.', dur:8000},
+ {mode:'grupo', txt:'El mar entero se quedó frío, gris y silencioso. No quedaba ni un solo color.', dur:8000, fx:'gris', star:null},
+ {mode:'grupo', txt:'Los peces chocaban entre ellos: «¡ay!», «¡perdón!», «¿quién anda ahí?». Nadie veía su camino.', dur:8000, fx:'gris', star:null},
+ {mode:'solo', star:'pez', speaker:'pez', txt:'Nilo fue el primero en darse cuenta: la luz se había ido.', dur:8000, fx:'gris'},
+ {mode:'solo', star:'pez', speaker:'pez', txt:'«¡Amigos, despierten! ¡Tenemos que encontrar la Perla de Luz!», gritó con todas sus fuerzas.', dur:8000, fx:'gris'},
+ {mode:'duo', star:'pez', speaker:'caballito', txt:'«¡Yo llevo el aviso! ¡Nadie es más rápido que yo!», dijo Marino, y salió disparado como una flecha.', dur:9000, fx:'gris'},
+ {mode:'grupo', txt:'Y uno a uno, desde cada cueva y cada coral, todos los amigos respondieron al llamado.', dur:8000, fx:'gris', star:'pez'},
 
- {mode:'duo', star:'tortuga', speaker:'tortuga', txt:'«Yo sé dónde está», dijo la sabia Tomasa. «En la Cueva Oscura».', dur:9500},
- {mode:'duo', star:'tortuga', speaker:'pez', txt:'«Es peligroso… pero juntos podemos lograrlo», respondió Nilo.', dur:9000},
+ {mode:'duo', star:'tortuga', speaker:'tortuga', txt:'«Yo sé dónde cayó», dijo la sabia Tomasa. «En la Cueva Oscura, donde el mar guarda sus secretos».', dur:9500},
+ {mode:'duo', star:'tortuga', speaker:'pez', txt:'«Ese lugar da un poquito de miedo…», dijo Nilo. «Pero juntos, ¡podemos lograrlo!»', dur:9000},
  {mode:'viaje', txt:'Y así comenzó el gran viaje hacia la Cueva Oscura.', dur:8000, star:'tortuga'},
- {mode:'viaje', txt:'Nadaron sobre praderas de algas y montañas de coral.', dur:8500, star:'tortuga'},
- {mode:'viaje', txt:'El camino era largo, pero nadie quería rendirse.', dur:8000, star:'tortuga'},
- {mode:'viaje', txt:'De pronto, una corriente fortísima les cerró el paso.', dur:8000, star:'tortuga', fx:'temblor'},
- {mode:'solo', star:'ballena', speaker:'ballena', txt:'«¡Suban a mi lomo!», dijo Azul, la gran ballena.', dur:8000},
- {mode:'cruce', txt:'Con toda su fuerza, Azul cruzó la corriente llevándolos a salvo.', dur:9500, star:'ballena'},
- {mode:'cruce', txt:'¡Lo lograron! Al otro lado estaba la entrada de la cueva.', dur:8500, star:'ballena'},
- {mode:'grupo', txt:'Pero un alga gigante cubría la entrada. Nadie podía pasar.', dur:8500, star:null},
- {mode:'solo', star:'cangrejo', speaker:'cangrejo', txt:'«Déjenmelo a mí», dijo Tenaza, afilando sus pinzas.', dur:8000},
- {mode:'solo', star:'cangrejo', speaker:'cangrejo', txt:'¡Chac, chac, chac! El alga cayó cortada en pedazos.', dur:8000, fx:'corte'},
- {mode:'grupo', txt:'La entrada quedó libre y todos entraron a la cueva.', dur:8000, star:'cangrejo', bg:'entrada'},
+ {mode:'viaje', txt:'Nadaron sobre praderas de algas que hacían cosquillas y montañas de coral altas como castillos.', dur:8500, star:'tortuga'},
+ {mode:'viaje', txt:'El camino era largo y las aletas ya pesaban… pero nadie, nadie quería rendirse.', dur:8000, star:'tortuga'},
+ {mode:'viaje', txt:'De pronto, ¡fuuum!, una corriente fortísima les cerró el paso, girando como un remolino.', dur:8000, star:'tortuga', fx:'temblor'},
+ {mode:'solo', star:'ballena', speaker:'ballena', txt:'«¡Suban a mi lomo, rapidito!», cantó Azul, la gran ballena.', dur:8000},
+ {mode:'cruce', txt:'Con toda su fuerza, Azul empujó contra la corriente… y los cruzó a todos sanos y salvos.', dur:9500, star:'ballena'},
+ {mode:'cruce', txt:'¡Lo lograron! Al otro lado, entre dos rocas gigantes, los esperaba la entrada de la cueva.', dur:8500, star:'ballena'},
+ {mode:'grupo', txt:'Pero un alga gigante, enredada como mil nudos, tapaba la entrada. Nadie podía pasar.', dur:8500, star:null},
+ {mode:'solo', star:'cangrejo', speaker:'cangrejo', txt:'«Déjenmelo a mí», dijo Tenaza, sacándole brillo a sus pinzas.', dur:8000},
+ {mode:'solo', star:'cangrejo', speaker:'cangrejo', txt:'¡Chac, chac, chac! En un abrir y cerrar de pinzas, el alga cayó cortada en pedacitos.', dur:8000, fx:'corte'},
+ {mode:'grupo', txt:'La entrada quedó libre y, despacito, uno detrás de otro, entraron a la cueva.', dur:8000, star:'cangrejo', bg:'entrada'},
 
- {mode:'grupo', txt:'Adentro estaba tan oscuro que no se veían ni las aletas.', dur:8000, fx:'dark', star:null, bg:'cueva'},
- {mode:'solo', star:'medusa', speaker:'medusa', txt:'«No teman», dijo Lumi. «Yo los iluminaré».', dur:8000, fx:'dark', bg:'cueva'},
- {mode:'oscuridad', txt:'La medusa encendió su luz, suave y azulada.', dur:9000, star:'medusa', fx:'brilla', bg:'cueva'},
- {mode:'oscuridad', txt:'Y la cueva entera se llenó de un resplandor mágico.', dur:8500, star:'medusa', fx:'brilla', bg:'cueva'},
- {mode:'oscuridad', txt:'Avanzaron despacio por la cueva, buscando en la oscuridad.', dur:8500, star:'medusa', fx:'brilla', bg:'cueva'},
- {mode:'grupo', txt:'Al fondo hallaron una concha gigante, cerrada con fuerza.', dur:8500, star:null, bg:'cueva'},
- {mode:'solo', star:'pulpo', speaker:'pulpo', txt:'«Ocho brazos serán suficientes», dijo Otto.', dur:8500, bg:'cueva'},
- {mode:'solo', star:'pulpo', speaker:'pulpo', txt:'Tiró y tiró… hasta que la concha se abrió de golpe.', dur:9000, fx:'corte', bg:'cueva'},
- {mode:'circulo', txt:'¡Ahí estaba la Perla de Luz! Pero estaba apagada.', dur:8500, fx:'perla', star:null, bg:'cueva'},
- {mode:'circulo', txt:'Por más que la tocaban, la perla no despertaba.', dur:8000, fx:'perla', bg:'cueva'},
+ {mode:'grupo', txt:'Adentro estaba tan oscuro, tan oscuro, que no se veían ni sus propias aletas.', dur:8000, fx:'dark', star:null, bg:'cueva'},
+ {mode:'solo', star:'medusa', speaker:'medusa', txt:'«No teman, amigos», dijo Lumi con voz suavecita. «Para eso estoy yo».', dur:8000, fx:'dark', bg:'cueva'},
+ {mode:'oscuridad', txt:'Y la medusa encendió su luz, azulada y tibia como una lamparita de noche.', dur:9000, star:'medusa', fx:'brilla', bg:'cueva'},
+ {mode:'oscuridad', txt:'La cueva entera se llenó de un resplandor mágico que bailaba en las paredes.', dur:8500, star:'medusa', fx:'brilla', bg:'cueva'},
+ {mode:'oscuridad', txt:'Avanzaron despacio, muy juntitos, buscando en cada rincón de la oscuridad.', dur:8500, star:'medusa', fx:'brilla', bg:'cueva'},
+ {mode:'grupo', txt:'Hasta que al fondo encontraron una concha gigante, cerrada con muchísima fuerza.', dur:8500, star:null, bg:'cueva'},
+ {mode:'solo', star:'pulpo', speaker:'pulpo', txt:'«Ocho brazos son ocho abrazos», dijo Otto. «¡Y también sirven para abrir conchas!»', dur:8500, bg:'cueva'},
+ {mode:'solo', star:'pulpo', speaker:'pulpo', txt:'Otto tiró y tiró y tiró… hasta que ¡POP!, la concha se abrió de golpe.', dur:9000, fx:'corte', bg:'cueva'},
+ {mode:'circulo', txt:'¡Ahí estaba la Perla de Luz! Pero… estaba apagada, dormida como una piedra.', dur:8500, fx:'perla', star:null, bg:'cueva'},
+ {mode:'circulo', txt:'La tocaron con las aletas, le hablaron bajito… y nada. La perla no despertaba.', dur:8000, fx:'perla', bg:'cueva'},
 
- {mode:'solo', star:'ballena', speaker:'ballena', txt:'Entonces Azul cerró los ojos y empezó a cantar.', dur:8500, bg:'cueva'},
- {mode:'solo', star:'ballena', speaker:'ballena', txt:'Una canción antigua, lenta y profunda que solo ella conocía.', dur:9000, fx:'canta', bg:'cueva'},
+ {mode:'solo', star:'ballena', speaker:'ballena', txt:'Entonces Azul cerró los ojos, respiró hondo… y empezó a cantar.', dur:8500, bg:'cueva'},
+ {mode:'solo', star:'ballena', speaker:'ballena', txt:'Era una canción antigua, lenta y profunda, que solo las ballenas recuerdan.', dur:9000, fx:'canta', bg:'cueva'},
  {mode:'circulo', txt:'Todos contuvieron la respiración, esperando un milagro.', dur:8000, fx:'perla', bg:'cueva'},
- {mode:'circulo', txt:'Poco a poco, la perla comenzó a brillar otra vez…', dur:9000, fx:'perla', star:'ballena', bg:'cueva'},
- {mode:'circulo', txt:'¡hasta iluminar toda la cueva con su luz!', dur:8000, fx:'perla', bg:'cueva'},
- {mode:'solo', star:'estrella', speaker:'estrella', txt:'«¡Síganme!», brilló Estela. «Conozco el camino a casa».', dur:8500, fx:'brilla', bg:'cueva'},
- {mode:'viaje', txt:'La estrella los guió de vuelta, como una brújula de luz.', dur:9000, star:'estrella', fx:'brilla'},
- {mode:'circulo', txt:'Colocaron la perla en su roca, en el centro del arrecife.', dur:8500, fx:'perla', star:null, bg:'arrecife'},
- {mode:'grupo', txt:'Y de golpe… ¡el mar recuperó todos sus colores!', dur:8500, fx:'color', star:null},
+ {mode:'circulo', txt:'Y poco a poco, despacito… la perla comenzó a brillar otra vez…', dur:9000, fx:'perla', star:'ballena', bg:'cueva'},
+ {mode:'circulo', txt:'¡hasta llenar la cueva entera con su luz de mil colores!', dur:8000, fx:'perla', bg:'cueva'},
+ {mode:'solo', star:'estrella', speaker:'estrella', txt:'«¡Síganme, yo conozco todos los caminos!», brilló Estela, apuntando con sus cinco puntas.', dur:8500, fx:'brilla', bg:'cueva'},
+ {mode:'viaje', txt:'Y la estrella los guió de regreso a casa, como una brújula de luz en el agua.', dur:9000, star:'estrella', fx:'brilla'},
+ {mode:'circulo', txt:'Colocaron la perla en su roca, en el centro del arrecife, donde siempre debió estar.', dur:8500, fx:'perla', star:null, bg:'arrecife'},
+ {mode:'grupo', txt:'Y de golpe… ¡FUAAA! ¡El mar recuperó todos sus colores de una sola vez!', dur:8500, fx:'color', star:null},
 
- {mode:'fiesta', txt:'El arrecife brilló más que nunca. ¡Todos lo habían logrado!', dur:9000, fx:'perla'},
- {mode:'fiesta', txt:'Hicieron una gran fiesta que duró toda la noche.', dur:8500, fx:'perla'},
- {mode:'fiesta', txt:'Nilo miró a sus amigos y entendió algo muy importante.', dur:8500, star:'pez'},
- {mode:'grupo', txt:'Solo, ninguno habría podido. Pero juntos, fueron invencibles.', dur:9000, star:null},
+ {mode:'fiesta', txt:'El arrecife brilló más que nunca. ¡Lo habían logrado entre todos!', dur:9000, fx:'perla'},
+ {mode:'fiesta', txt:'Esa noche hubo una fiesta enorme: burbujas de colores, bailes y risas hasta el amanecer.', dur:8500, fx:'perla'},
+ {mode:'fiesta', txt:'Nilo miró a sus amigos, uno por uno, y entendió algo muy importante.', dur:8500, star:'pez'},
+ {mode:'grupo', txt:'Solo, ninguno habría podido. Pero juntos… ¡fueron invencibles!', dur:9000, star:null},
  {mode:'fin', txt:'🎉 ¡Y vivieron felices para siempre en el Acuario Mágico! 🎉', dur:11000, fx:'perla'},
  {mode:'titulo', txt:'Cada uno es especial. Y juntos, logramos cosas maravillosas.', dur:9000},
  {mode:'creditos', txt:'', dur:22000},
@@ -1008,41 +1105,41 @@ const GUION_ESPACIO=[
  {mode:'presenta', present:'luna', dur:11000},
  {mode:'presenta', present:'ovni', dur:11000},
  {mode:'presenta', present:'estrella', dur:12000},
- {mode:'solo', star:'estrella', speaker:'estrella', txt:'Allá arriba, quietecita en el cielo, vivía Lucero.', dur:8500, bg:'cielo', fx:'brilla'},
- {mode:'solo', star:'estrella', speaker:'estrella', txt:'Cada noche miraba el espacio enorme… pero siempre desde lejos.', dur:9000, bg:'cielo'},
- {mode:'solo', star:'estrella', speaker:'estrella', txt:'«¿Cómo serán los planetas de cerca? ¿Y la lluvia de estrellas?», soñaba.', dur:9500, bg:'cielo'},
- {mode:'duo', star:'estrella', speaker:'astronauta', txt:'Cosmo, el explorador, escuchó su deseo desde su nave.', dur:9000, bg:'cielo'},
- {mode:'duo', star:'estrella', speaker:'astronauta', txt:'«¡Lucero, hoy vas a conocer el universo entero!», le dijo sonriendo.', dur:9500, bg:'cielo'},
- {mode:'grupo', txt:'Todos los amigos se reunieron para preparar el gran viaje.', dur:9000, bg:'cielo', star:'astronauta'},
- {mode:'solo', star:'cohete', speaker:'cohete', txt:'Chispa, el cohete veloz, trajo un meteorito brillante para montar.', dur:9000, bg:'viaje', fx:'temblor'},
- {mode:'grupo', txt:'Con muchísimo cuidado, subieron a Lucero sobre el meteorito.', dur:9000, bg:'cielo', star:'estrella'},
- {mode:'grupo', txt:'«¿Lista? ¡Tres… dos… uno… YA!»', dur:7000, bg:'cielo', fx:'brilla', star:'estrella'},
- {mode:'viaje', txt:'Y despegaron hacia las estrellas a toda velocidad. 🚀', dur:9000, bg:'viaje', fx:'temblor', star:'estrella'},
- {mode:'viaje', txt:'Lucero veía pasar lucecitas por todos lados. ¡Nunca había ido tan rápido!', dur:9500, bg:'viaje', star:'estrella'},
- {mode:'circulo', txt:'Primera parada: los anillos gigantes de Orbi.', dur:8500, bg:'planeta', fx:'brilla'},
- {mode:'solo', star:'planeta', speaker:'planeta', txt:'«Da una vuelta por mis anillos, pequeña», dijo Orbi, el planeta sabio.', dur:9500, bg:'planeta', fx:'brilla'},
- {mode:'grupo', txt:'Lucero giró y giró entre los anillos, riendo de felicidad.', dur:9000, bg:'planeta', star:'estrella'},
- {mode:'grupo', txt:'Después saltaron por los cráteres saltarines de la Luna.', dur:9000, bg:'luna', star:'estrella'},
- {mode:'solo', star:'luna', speaker:'luna', txt:'«Por aquí, amigos», guió Lunita con su luz suave y plateada.', dur:9000, bg:'luna', fx:'brilla'},
- {mode:'grupo', txt:'De pronto llegaron a la lluvia de estrellas más linda del cielo. ✨', dur:9000, bg:'lluvia', fx:'brilla', star:'estrella'},
- {mode:'solo', star:'ovni', speaker:'ovni', txt:'Disco hacía piruetas entre los meteoros, ¡giro tras giro!', dur:9000, bg:'lluvia', fx:'corte'},
- {mode:'duo', star:'estrella', speaker:'alien', txt:'«Mira, ese de allá es MI planeta», señaló Zix con orgullo.', dur:9500, bg:'planeta'},
+ {mode:'solo', star:'estrella', speaker:'estrella', txt:'Allá arriba, quietecita en su rinconcito del cielo, vivía Lucero.', dur:8500, bg:'cielo', fx:'brilla'},
+ {mode:'solo', star:'estrella', speaker:'estrella', txt:'Cada noche miraba el espacio enorme, enorme… pero siempre desde lejos.', dur:9000, bg:'cielo'},
+ {mode:'solo', star:'estrella', speaker:'estrella', txt:'«¿Cómo serán los planetas de cerca? ¿A qué sonará una lluvia de estrellas?», suspiraba soñando.', dur:9500, bg:'cielo'},
+ {mode:'duo', star:'estrella', speaker:'astronauta', txt:'Cosmo, el explorador, escuchó su deseo desde la ventana de su nave.', dur:9000, bg:'cielo'},
+ {mode:'duo', star:'estrella', speaker:'astronauta', txt:'«¡Lucero, prepárate! ¡Hoy vas a conocer el universo entero!», le dijo sonriendo.', dur:9500, bg:'cielo'},
+ {mode:'grupo', txt:'La noticia corrió como un cometa, y todos los amigos se reunieron para preparar el gran viaje.', dur:9000, bg:'cielo', star:'astronauta'},
+ {mode:'solo', star:'cohete', speaker:'cohete', txt:'«¡Traje el mejor asiento del espacio!», rugió Chispa, remolcando un meteorito brillante.', dur:9000, bg:'viaje', fx:'temblor'},
+ {mode:'grupo', txt:'Con muchísimo cuidado, entre todos, subieron a Lucero sobre el meteorito.', dur:9000, bg:'cielo', star:'estrella'},
+ {mode:'grupo', txt:'«¿Lista, Lucero? ¡Tres… dos… uno… YAAA!»', dur:7000, bg:'cielo', fx:'brilla', star:'estrella'},
+ {mode:'viaje', txt:'¡Fiuuum! Despegaron hacia las estrellas a toda velocidad. 🚀', dur:9000, bg:'viaje', fx:'temblor', star:'estrella'},
+ {mode:'viaje', txt:'Lucero veía pasar lucecitas de colores por todos lados. ¡Nunca en su vida había ido tan rápido!', dur:9500, bg:'viaje', star:'estrella'},
+ {mode:'circulo', txt:'Primera parada: los anillos gigantes y dorados de Orbi.', dur:8500, bg:'planeta', fx:'brilla'},
+ {mode:'solo', star:'planeta', speaker:'planeta', txt:'«Bienvenida, pequeña», retumbó Orbi con su vozarrón. «Date una vuelta por mis anillos».', dur:9500, bg:'planeta', fx:'brilla'},
+ {mode:'grupo', txt:'Lucero giró y giró y giró entre los anillos, riéndose de pura felicidad.', dur:9000, bg:'planeta', star:'estrella'},
+ {mode:'grupo', txt:'Después saltaron por los cráteres saltarines de la Luna: ¡boing, boing, boing!', dur:9000, bg:'luna', star:'estrella'},
+ {mode:'solo', star:'luna', speaker:'luna', txt:'«Por aquí, amigos, pisen suavecito», guió Lunita con su luz plateada.', dur:9000, bg:'luna', fx:'brilla'},
+ {mode:'grupo', txt:'Y de pronto llegaron a la lluvia de estrellas más linda de todo el cielo. ✨', dur:9000, bg:'lluvia', fx:'brilla', star:'estrella'},
+ {mode:'solo', star:'ovni', speaker:'ovni', txt:'«¡Miren esto!», chilló Disco, haciendo piruetas entre los meteoros. ¡Giro, vuelta y rulo!', dur:9000, bg:'lluvia', fx:'corte'},
+ {mode:'duo', star:'estrella', speaker:'alien', txt:'«¿Ves ese puntito verde de allá?», señaló Zix con orgullo. «¡Ese es MI planeta!»', dur:9500, bg:'planeta'},
  {mode:'grupo', txt:'Lucero descubría un mundo nuevo en cada rincón. ¡Todo era asombroso!', dur:9000, bg:'cielo', star:'estrella'},
- {mode:'grupo', txt:'Pero de repente, una gran tormenta de polvo cósmico los rodeó.', dur:9000, bg:'polvo', fx:'dark', star:'estrella'},
- {mode:'grupo', txt:'El meteorito se sacudía y casi no se veía nada.', dur:8500, bg:'polvo', fx:'temblor', star:'estrella'},
- {mode:'solo', star:'robot', speaker:'robot', txt:'«¡Yo lo arreglo!» Tuerca ajustó el meteorito con sus herramientas.', dur:9500, bg:'polvo', fx:'corte'},
- {mode:'solo', star:'ovni', speaker:'ovni', txt:'Disco encendió todas sus luces para mostrar el camino.', dur:9000, bg:'polvo', fx:'brilla'},
- {mode:'solo', star:'luna', speaker:'luna', txt:'Y Lunita brilló con todas sus fuerzas para guiarlos.', dur:9000, bg:'polvo', fx:'brilla'},
- {mode:'grupo', txt:'Juntos, muy juntitos, atravesaron la tormenta sin miedo.', dur:9000, bg:'polvo', star:'estrella'},
- {mode:'viaje', txt:'Y al salir… ¡llegaron al Mirador del Universo!', dur:9000, bg:'mirador', fx:'brilla', star:'estrella'},
- {mode:'circulo', txt:'Ante ellos se abrieron galaxias enteras, llenas de colores.', dur:9500, bg:'mirador', fx:'perla'},
- {mode:'solo', star:'estrella', speaker:'estrella', txt:'Lucero miró TODO el universo de cerca. Sus ojitos se llenaron de luz.', dur:10000, bg:'mirador', fx:'perla'},
- {mode:'solo', star:'estrella', speaker:'estrella', txt:'Y entonces, Lucero empezó a brillar más y más… ¡como nunca antes!', dur:9500, bg:'mirador', fx:'brilla'},
- {mode:'circulo', txt:'Todos la rodearon, maravillados por su luz.', dur:8500, bg:'mirador', fx:'perla', star:'estrella'},
- {mode:'viaje', txt:'Llegó la hora de volver a casa, y esta vez…', dur:8000, bg:'viaje', star:'estrella'},
- {mode:'grupo', txt:'¡Lucero iluminó todo el camino de regreso!', dur:9000, bg:'viaje', fx:'brilla', star:'estrella'},
- {mode:'fiesta', txt:'En casa, los esperaba una fiesta espacial enorme. 🎉', dur:9000, bg:'fiesta', fx:'color', star:'estrella'},
- {mode:'solo', star:'estrella', speaker:'estrella', txt:'Desde esa noche, Lucero es la estrella más brillante del cielo.', dur:9500, bg:'fiesta', fx:'brilla'},
+ {mode:'grupo', txt:'Pero de repente, el cielo se puso oscuro: una tormenta de polvo cósmico los rodeó.', dur:9000, bg:'polvo', fx:'dark', star:'estrella'},
+ {mode:'grupo', txt:'El meteorito se sacudía, tiquiti-taca, y casi no se veía nada de nada.', dur:8500, bg:'polvo', fx:'temblor', star:'estrella'},
+ {mode:'solo', star:'robot', speaker:'robot', txt:'«Tranquilos: yo-lo-a-rre-glo», dijo Tuerca, y ajustó el meteorito con sus herramientas. ¡Clic, clac!', dur:9500, bg:'polvo', fx:'corte'},
+ {mode:'solo', star:'ovni', speaker:'ovni', txt:'Disco encendió todas sus lucecitas de colores para alumbrar el camino.', dur:9000, bg:'polvo', fx:'brilla'},
+ {mode:'solo', star:'luna', speaker:'luna', txt:'Y Lunita brilló con todas sus fuerzas, como un faro en la noche.', dur:9000, bg:'polvo', fx:'brilla'},
+ {mode:'grupo', txt:'Juntos, muy juntitos, tomados de las manos, atravesaron la tormenta sin miedo.', dur:9000, bg:'polvo', star:'estrella'},
+ {mode:'viaje', txt:'Y al salir… ¡oooooh! ¡Habían llegado al Mirador del Universo!', dur:9000, bg:'mirador', fx:'brilla', star:'estrella'},
+ {mode:'circulo', txt:'Ante ellos se abrieron galaxias enteras, girando llenas de colores.', dur:9500, bg:'mirador', fx:'perla'},
+ {mode:'solo', star:'estrella', speaker:'estrella', txt:'Lucero miró TODO el universo de cerca. Y sus ojitos se llenaron de luz.', dur:10000, bg:'mirador', fx:'perla'},
+ {mode:'solo', star:'estrella', speaker:'estrella', txt:'Entonces Lucero empezó a brillar más y más y más… ¡como nunca había brillado nadie!', dur:9500, bg:'mirador', fx:'brilla'},
+ {mode:'circulo', txt:'Todos la rodearon en silencio, maravillados por su luz.', dur:8500, bg:'mirador', fx:'perla', star:'estrella'},
+ {mode:'viaje', txt:'Llegó la hora de volver a casa… y esta vez no hizo falta ningún faro.', dur:8000, bg:'viaje', star:'estrella'},
+ {mode:'grupo', txt:'¡Porque Lucero iluminó ella solita todo el camino de regreso!', dur:9000, bg:'viaje', fx:'brilla', star:'estrella'},
+ {mode:'fiesta', txt:'En casa los esperaba una fiesta espacial enorme, con música de cometas. 🎉', dur:9000, bg:'fiesta', fx:'color', star:'estrella'},
+ {mode:'solo', star:'estrella', speaker:'estrella', txt:'Desde esa noche, si miras bien el cielo, la estrella que más brilla… es Lucero.', dur:9500, bg:'fiesta', fx:'brilla'},
  {mode:'grupo', txt:'Porque se atrevió a soñar… y sus amigos la llevaron a descubrir.', dur:9500, bg:'cielo', star:'estrella'},
  {mode:'fin', txt:'🌟 ¡El Gran Viaje de Lucero! 🌟', dur:11000, fx:'perla', bg:'mirador'},
  {mode:'titulo', txt:'Sueña en grande. El universo te está esperando.', dur:9000, bg:'cielo'},
@@ -1074,40 +1171,40 @@ const GUION_OESTE=[
  {mode:'presenta', present:'coyote', dur:11000},
  {mode:'presenta', present:'toro', dur:11000},
  {mode:'presenta', present:'tren', dur:11000},
- {mode:'grupo', txt:'En el pueblo de Polvo Dorado, hoy era el gran día: ¡la carrera anual!', dur:9000, bg:'pueblo', star:'vaquero'},
- {mode:'solo', star:'sheriff', speaker:'sheriff', txt:'«La regla es una sola: lleguen sanos a la meta», dijo el sheriff Justo.', dur:9500, bg:'pueblo', fx:'brilla'},
- {mode:'grupo', txt:'Todos se acomodaron en la línea de salida, emocionadísimos.', dur:8500, bg:'pueblo', star:'sheriff'},
- {mode:'solo', star:'sheriff', speaker:'sheriff', txt:'«¡En sus marcas… listos… YA!»', dur:6500, bg:'pueblo', fx:'corte'},
- {mode:'viaje', txt:'¡Arrancaron todos a toda velocidad por el desierto! 💨', dur:9000, bg:'desierto', fx:'temblor', star:'caballo'},
- {mode:'solo', star:'caballo', speaker:'caballo', txt:'Trueno, el caballo veloz, tomó la delantera al galope.', dur:9000, bg:'desierto'},
- {mode:'cruce', star:'coyote', speaker:'coyote', txt:'Pero Aullido, el coyote astuto, lo alcanzaba a paso ligero.', dur:9000, bg:'desierto'},
- {mode:'grupo', txt:'Y atrás, resoplando, venía la locomotora Chucu: ¡chucu-chucu!', dur:8500, bg:'desierto', star:'tren'},
- {mode:'solo', star:'cactus', speaker:'cactus', txt:'El sol picaba fuerte. Pinchón les dio sombra y un sorbo de agua fresca.', dur:9500, bg:'desierto', fx:'brilla'},
- {mode:'grupo', txt:'De pronto… ¡PUM! El toro Cuernos tropezó y cayó en un hoyo.', dur:9000, bg:'desierto', fx:'cae', star:'toro'},
- {mode:'solo', star:'toro', speaker:'toro', txt:'«¡Ay! No puedo salir solo de aquí…», dijo Cuernos, triste.', dur:9000, bg:'desierto', fx:'cae'},
- {mode:'solo', star:'caballo', speaker:'caballo', txt:'Trueno iba ganando… pero frenó. ¿Seguir, o ayudar a su amigo?', dur:9500, bg:'desierto', fx:'cae'},
- {mode:'grupo', txt:'Trueno regresó y, con un fuerte tirón, sacó a Cuernos del hoyo.', dur:9000, bg:'desierto', fx:'sale', star:'caballo'},
+ {mode:'grupo', txt:'En el pueblo de Polvo Dorado había llegado el día más esperado del año: ¡la gran carrera!', dur:9000, bg:'pueblo', star:'vaquero'},
+ {mode:'solo', star:'sheriff', speaker:'sheriff', txt:'«Escuchen bien: la regla es una sola», dijo el sheriff Justo. «Lleguen todos sanos a la meta».', dur:9500, bg:'pueblo', fx:'brilla'},
+ {mode:'grupo', txt:'Todos se acomodaron en la línea de salida, con las patas temblando de la emoción.', dur:8500, bg:'pueblo', star:'sheriff'},
+ {mode:'solo', star:'sheriff', speaker:'sheriff', txt:'«¡En sus marcas… listos… YAAA!»', dur:6500, bg:'pueblo', fx:'corte'},
+ {mode:'viaje', txt:'¡Y arrancaron todos a toda velocidad por el desierto, levantando nubes de polvo! 💨', dur:9000, bg:'desierto', fx:'temblor', star:'caballo'},
+ {mode:'solo', star:'caballo', speaker:'caballo', txt:'Trueno tomó la delantera al galope: ¡tacatá, tacatá, tacatá!', dur:9000, bg:'desierto'},
+ {mode:'cruce', star:'coyote', speaker:'coyote', txt:'Pero Aullido, el coyote astuto, lo seguía de cerquita, pisando suave como una sombra.', dur:9000, bg:'desierto'},
+ {mode:'grupo', txt:'Y atrás, resoplando vapor, venía la locomotora Chucu: ¡chucu-chucu, chucu-chucu!', dur:8500, bg:'desierto', star:'tren'},
+ {mode:'solo', star:'cactus', speaker:'cactus', txt:'El sol picaba fuerte. «¡Paren un segundito!», dijo Pinchón, y les dio sombra y agua fresca.', dur:9500, bg:'desierto', fx:'brilla'},
+ {mode:'grupo', txt:'De pronto… ¡PUM! El toro Cuernos tropezó y se cayó dentro de un hoyo enorme.', dur:9000, bg:'desierto', fx:'cae', star:'toro'},
+ {mode:'solo', star:'toro', speaker:'toro', txt:'«¡Ayuda! No puedo salir solo de aquí…», dijo Cuernos con su vozarrón triste.', dur:9000, bg:'desierto', fx:'cae'},
+ {mode:'solo', star:'caballo', speaker:'caballo', txt:'Trueno iba ganando… pero frenó en seco. ¿Seguir y ganar, o volver por su amigo?', dur:9500, bg:'desierto', fx:'cae'},
+ {mode:'grupo', txt:'Trueno dio media vuelta y, con un fuerte tirón, ¡yiiija!, sacó a Cuernos del hoyo.', dur:9000, bg:'desierto', fx:'sale', star:'caballo'},
  {mode:'grupo', txt:'Y siguieron juntos, ahora hacia el gran cañón rojo.', dur:8500, bg:'canon', star:'caballo'},
- {mode:'viaje', txt:'El cañón era estrecho, alto y lleno de rocas.', dur:8500, bg:'canon'},
- {mode:'solo', star:'aguila', speaker:'aguila', txt:'Alas voló bien alto y desde el cielo les mostró el camino seguro.', dur:9500, bg:'canon', fx:'brilla'},
- {mode:'grupo', txt:'Uno detrás de otro, cruzaron el cañón sin tropezar.', dur:8500, bg:'canon', star:'aguila'},
- {mode:'grupo', txt:'Pero al salir encontraron un río ancho… ¡y sin puente!', dur:9000, bg:'rio', star:'vaquero'},
- {mode:'solo', star:'tren', speaker:'tren', txt:'«¡Yo los cruzo!» Chucu estiró sus vagones de orilla a orilla.', dur:9500, bg:'rio', fx:'corte'},
- {mode:'grupo', txt:'Y todos cruzaron el río caminando sobre la locomotora. ¡Chucu era el puente!', dur:9500, bg:'rio', fx:'brilla', star:'tren'},
- {mode:'grupo', txt:'De repente, el viento sopló fuerte y una gran polvareda los envolvió.', dur:9000, bg:'polvareda', fx:'dark', star:'vaquero'},
- {mode:'grupo', txt:'No se veía nada. La arena giraba por todos lados.', dur:8500, bg:'polvareda', fx:'temblor', star:'vaquero'},
- {mode:'solo', star:'sheriff', speaker:'sheriff', txt:'Justo hizo brillar su placa de estrella para que nadie se perdiera.', dur:9500, bg:'polvareda', fx:'brilla'},
- {mode:'solo', star:'coyote', speaker:'coyote', txt:'Y Aullido olfateó el aire para encontrar el camino correcto.', dur:9000, bg:'polvareda', fx:'brilla'},
- {mode:'grupo', txt:'Tomados de la mano, muy juntitos, cruzaron la polvareda sin miedo.', dur:9000, bg:'polvareda', star:'coyote'},
- {mode:'viaje', txt:'Y al despejarse el polvo… ¡vieron la meta a lo lejos!', dur:8500, bg:'meta', fx:'brilla', star:'vaquero'},
- {mode:'grupo', txt:'Todos estaban cansados, llenos de polvo… pero juntos.', dur:8500, bg:'meta', star:'vaquero'},
- {mode:'solo', star:'vaquero', speaker:'vaquero', txt:'«Nadie llegó solo hasta aquí. ¡Crucemos TODOS juntos!», dijo Tom.', dur:9500, bg:'meta', fx:'brilla'},
- {mode:'grupo', txt:'Se tomaron de las manos, de los cascos y de las patas.', dur:8000, bg:'meta', star:'vaquero'},
+ {mode:'viaje', txt:'El cañón era estrecho, altísimo y lleno de rocas por todos lados.', dur:8500, bg:'canon'},
+ {mode:'solo', star:'aguila', speaker:'aguila', txt:'«¡Síganme desde abajo!», gritó Alas, y voló bien alto para mostrarles el camino seguro.', dur:9500, bg:'canon', fx:'brilla'},
+ {mode:'grupo', txt:'Uno detrás de otro, pasito a pasito, cruzaron el cañón sin tropezar ni una vez.', dur:8500, bg:'canon', star:'aguila'},
+ {mode:'grupo', txt:'Pero al salir los esperaba un río ancho y correntoso… ¡y sin ningún puente!', dur:9000, bg:'rio', star:'vaquero'},
+ {mode:'solo', star:'tren', speaker:'tren', txt:'«¡Piiiii! ¡Yo soy el puente!», silbó Chucu, y estiró sus vagones de orilla a orilla.', dur:9500, bg:'rio', fx:'corte'},
+ {mode:'grupo', txt:'Y todos cruzaron el río caminando sobre la locomotora. ¡Gracias, Chucu!', dur:9500, bg:'rio', fx:'brilla', star:'tren'},
+ {mode:'grupo', txt:'De repente el viento sopló fuerte, uuuuuh, y una gran polvareda los envolvió.', dur:9000, bg:'polvareda', fx:'dark', star:'vaquero'},
+ {mode:'grupo', txt:'No se veía nada de nada. La arena giraba y bailaba por todos lados.', dur:8500, bg:'polvareda', fx:'temblor', star:'vaquero'},
+ {mode:'solo', star:'sheriff', speaker:'sheriff', txt:'«¡Miren mi placa!», dijo Justo, y la hizo brillar como una estrella para que nadie se perdiera.', dur:9500, bg:'polvareda', fx:'brilla'},
+ {mode:'solo', star:'coyote', speaker:'coyote', txt:'Y Aullido levantó la nariz, snif, snif… «¡Por aquí! ¡Huelo el pan dulce del pueblo!»', dur:9000, bg:'polvareda', fx:'brilla'},
+ {mode:'grupo', txt:'Tomados de la mano, muy juntitos, cruzaron la polvareda sin soltarse ni un momento.', dur:9000, bg:'polvareda', star:'coyote'},
+ {mode:'viaje', txt:'Y cuando el polvo se despejó… ¡ahí estaba! ¡La meta, a lo lejos!', dur:8500, bg:'meta', fx:'brilla', star:'vaquero'},
+ {mode:'grupo', txt:'Estaban cansados, despeinados y llenos de polvo… pero estaban juntos.', dur:8500, bg:'meta', star:'vaquero'},
+ {mode:'solo', star:'vaquero', speaker:'vaquero', txt:'«Nadie llegó solo hasta aquí», dijo Tom. «Así que… ¡crucemos TODOS juntos!»', dur:9500, bg:'meta', fx:'brilla'},
+ {mode:'grupo', txt:'Se tomaron de las manos, de los cascos, de las alas y de las patas.', dur:8000, bg:'meta', star:'vaquero'},
  {mode:'circulo', txt:'Y cruzaron la meta… ¡TODOS al mismo tiempo! 🎉', dur:9000, bg:'meta', fx:'perla', star:'vaquero'},
- {mode:'grupo', txt:'El pueblo entero estalló en aplausos por todos los corredores.', dur:9000, bg:'pueblo', fx:'color', star:'sheriff'},
- {mode:'fiesta', txt:'Esa tarde hubo la fiesta más grande de Polvo Dorado. 🎶', dur:9000, bg:'fiesta', fx:'color', star:'vaquero'},
- {mode:'solo', star:'vaquero', speaker:'vaquero', txt:'«Ganamos todos», dijo Tom, «porque nos ayudamos en el camino.»', dur:9500, bg:'fiesta', fx:'brilla'},
- {mode:'grupo', txt:'Y así aprendieron que juntos siempre se llega más lejos.', dur:9000, bg:'pueblo', star:'vaquero'},
+ {mode:'grupo', txt:'El pueblo entero estalló en aplausos y sombreros por el aire.', dur:9000, bg:'pueblo', fx:'color', star:'sheriff'},
+ {mode:'fiesta', txt:'Esa tarde hubo la fiesta más grande que se recuerde en Polvo Dorado. 🎶', dur:9000, bg:'fiesta', fx:'color', star:'vaquero'},
+ {mode:'solo', star:'vaquero', speaker:'vaquero', txt:'«Hoy ganamos todos», dijo Tom levantando su sombrero, «porque nos ayudamos en el camino».', dur:9500, bg:'fiesta', fx:'brilla'},
+ {mode:'grupo', txt:'Y así aprendieron que juntos siempre, siempre, se llega más lejos.', dur:9000, bg:'pueblo', star:'vaquero'},
  {mode:'fin', txt:'🌵 ¡La Gran Carrera de Polvo Dorado! 🌵', dur:11000, fx:'perla', bg:'meta'},
  {mode:'titulo', txt:'Lo importante no es llegar primero, sino llegar juntos.', dur:9000, bg:'pueblo'},
  {mode:'creditos', txt:'', dur:22000},
@@ -1136,7 +1233,8 @@ function cargarMundo(id){
   document.body.classList.toggle('espacio', m.tema==='espacio');
   document.body.classList.toggle('oeste', m.tema==='oeste');
   const noMar=(m.tema!=='mar');
-  depthLayer.visible=!noMar; bubbleLayer.visible=!noMar; plantLayer.visible=!noMar; planktonLayer.visible=!noMar;
+  depthLayer.visible=!noMar; bubbleLayer.visible=!noMar; plantLayer.visible=!noMar; planktonLayer.visible=!noMar; farLayer.visible=!noMar;
+  ACCENT=m.pearl||0x2ee6cf;
   pintarFondoMundo(m.tema);
   buildScape();
   preloadCine();
@@ -1218,7 +1316,7 @@ function applyScene(i){
     if(s.mode==='presenta'&&r===s.present) an='gira';
     else if(s.mode==='viaje') an='avanza';
     else if(s.mode==='cruce') an=(r===star)?'cruza':'nada';
-    else if(s.mode==='fiesta'||s.mode==='fin') an='salta';
+    else if(s.mode==='fiesta'||s.mode==='fin') an='baila';
     a.anim=an; });
   /* ----- Caída en un hueco (fx 'cae' enciende, fx 'sale' apaga) ----- */
   if(s.fx==='cae'){ holeActive=true; holeRole=star||speaker; }
@@ -1236,20 +1334,23 @@ async function startCinema(){
   const btn=document.getElementById('btnCine');
   if(!cineReady){ btn.disabled=true; const old=btn.innerHTML; btn.textContent='Cargando…'; await preloadCine(); btn.disabled=false; btn.innerHTML=old; }
   buildActors(); app.stage.addChild(cinemaLayer);
+  cinemaLayer.addChild(cineFx); // confeti por encima de los actores
   cineActive=true; cinePaused=false; document.getElementById('cinePlay').textContent='⏸';
   audioInit(); buildScape();
   creatureLayer.visible=false; labelLayer.visible=false; cinemaLayer.visible=true;
+  document.getElementById('empty').classList.add('hide');
   document.getElementById('cinema').classList.add('show');
   document.querySelector('.controls').style.display='none';
   applyScene(0);
 }
 function stopCinema(){
-  cineActive=false; cinemaLayer.visible=false; cinePearl.visible=false; cineGlow.visible=false; cineDark.clear(); cineRings.clear(); holeActive=false; holeRole=null; holeDust=[]; cineHole.visible=false;
+  cineActive=false; cinemaLayer.visible=false; cinePearl.visible=false; cineGlow.visible=false; cineDark.clear(); cineRings.clear(); holeActive=false; holeRole=null; holeDust=[]; cineHole.visible=false; limpiarConfeti();
   if(window.Env3D) window.Env3D.hide();
   if(synth){ try{ synth.cancel(); }catch(e){} } audioSuspend();
   document.getElementById('cinema').classList.remove('show');
   document.getElementById('cineCredits').classList.remove('show');
   document.querySelector('.controls').style.display='';
+  if(!creatures.length) document.getElementById('empty').classList.remove('hide');
   creatureLayer.visible=true; labelLayer.visible=true; cinemaLayer.x=0;
 }
 function nextScene(){ if(scene<GUION.length-1) applyScene(scene+1); else stopCinema(); }
@@ -1258,6 +1359,17 @@ function prevScene(){ if(scene>0) applyScene(scene-1); }
 window.__cineTick=function(d){
   if(!cineActive) return;
   for(const r of ROLES) if(actors[r]) actors[r].update(d);
+  // confeti mientras dura la fiesta
+  const festivo=curScene && (curScene.mode==='fiesta'||curScene.mode==='fin'||curScene.fx==='color');
+  if(festivo && !reduceMotion && confetti.length<130){
+    for(let k=0;k<2;k++){ const g=new PIXI.Graphics();
+      g.beginFill(CONF_COLS[(Math.random()*CONF_COLS.length)|0],1).drawRect(-4,-2.5,8,5).endFill();
+      g.x=Math.random()*W(); g.y=-14; g.vy=1.1+Math.random()*1.9; g.vx=(Math.random()-0.5)*1.2;
+      g.rs=(Math.random()-0.5)*0.22; g.ph=Math.random()*6.28; cineFx.addChild(g); confetti.push(g); }
+  }
+  for(let i=confetti.length-1;i>=0;i--){ const g=confetti[i];
+    g.ph+=0.05*d; g.y+=g.vy*d; g.x+=(g.vx+Math.sin(g.ph)*0.9)*d; g.rotation+=g.rs*d; g.scale.y=Math.sin(g.ph*1.7)||0.01;
+    if(g.y>H()+18){ cineFx.removeChild(g); g.destroy(); confetti.splice(i,1); } }
   if(glowRole && actors[glowRole]){ const a=actors[glowRole]; cineGlow.visible=true; cineGlow.x=a.sprite.x; cineGlow.y=a.sprite.y; cineGlow.scale.set(1+Math.sin(performance.now()*0.003)*0.12); } else cineGlow.visible=false;
   cineRings.clear();
   if(ringsOn && glowRole && actors[glowRole]){ const a=actors[glowRole]; ringT+=d; for(let k=0;k<3;k++){ const ph=((ringT*0.018)+(k/3))%1; cineRings.lineStyle(3,0x9fffe9,(1-ph)*0.5); cineRings.drawCircle(a.sprite.x,a.sprite.y,40+ph*220);} }
@@ -1283,6 +1395,7 @@ window.__cineTick=function(d){
     if(bgMode==='polvareda'){ cave.children.forEach(g=>{ g.x-=g.spd*d*0.8; if(g.x<-260) g.x=W()+260; }); }
     cineBg.y=0;
   } else {
+  if(reef.visible){ let ri=0; for(const c of reef.children){ c.rotation=Math.sin(bgT*0.012+ri*1.7)*0.035; ri++; } }
   if(bgMode==='viaje'||bgMode==='corriente'){ const sp=(bgMode==='corriente'?3.4:1.9); drift.children.forEach(g=>{ g.x-=sp*g.spd*d; if(g.x<-90) g.x=W()+90; }); }
   if(bgMode==='entrada'){ bgEnter=Math.min(1,bgEnter+0.006*d); cave.scale.set(0.5+0.5*bgEnter); cave.alpha=bgEnter; }
   if(bgMode==='cueva'){ cineBg.y=Math.sin(bgT*0.02)*7; } else if(bgMode!=='entrada'){ cineBg.y=0; }
