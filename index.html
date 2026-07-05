@@ -1254,31 +1254,51 @@ let MUNDO_ID='acuario';
    Solo tienes que subir los archivos con estos nombres exactos
    al repositorio. Los que no existan se ignoran solitos.
    ============================================================ */
-const VIDEO_FONDO   = { acuario:'fondo-mar.mp4',      espacio:'fondo-espacio.mp4',    oeste:'fondo-oeste.mp4'    };
-const VIDEO_PELICULA= { acuario:'pelicula-mar.mp4',   espacio:'pelicula-espacio.mp4', oeste:'pelicula-oeste.mp4' };
+/* Para cada mundo se prueban varios nombres posibles y se usa el que EXISTA.
+   Así funciona tanto con nombres limpios como con los nombres largos que
+   ya subiste, sin necesidad de renombrar nada. */
+const VIDEO_FONDO = {
+  acuario:['fondo-mar.mp4', 'fondo-acuario.mp4', '¡Buena_idea_Te_armo_los_promp.mp4'],
+  espacio:['fondo-espacio.mp4'],
+  oeste:  ['fondo-oeste.mp4']
+};
+const VIDEO_PELICULA = {
+  acuario:['pelicula-mar.mp4', 'pelicula-acuario.mp4'],
+  espacio:['pelicula-espacio.mp4', '🚀_El_Gran_Viaje_de_Lucero_es.mp4'],
+  oeste:  ['pelicula-oeste.mp4']
+};
+// prueba una lista de nombres y devuelve el primero que exista (o null)
+function resolverVideo(lista){
+  const cands=(lista||[]).map(n=>encodeURI(n));
+  return cands.reduce((p,url)=>p.then(found=>found||fetch(url,{method:'HEAD'}).then(r=>r.ok?url:null).catch(()=>null)), Promise.resolve(null));
+}
 
 const bgVideoEl=document.getElementById('bgVideo');
+let fondoToken=0;
 function setFondoVideo(id){
-  const src=VIDEO_FONDO[id];
-  if(!src){ bgVideoEl.classList.remove('show'); bgVideoEl.removeAttribute('src'); document.body.classList.remove('hasbgvideo'); worldBg.visible=(TEMA!=='mar'); return; }
-  // hay video de fondo: probamos cargarlo; si falla, volvemos al fondo dibujado
-  bgVideoEl.onerror=()=>{ bgVideoEl.classList.remove('show'); document.body.classList.remove('hasbgvideo'); worldBg.visible=(TEMA!=='mar'); pintarFondoMundo(TEMA); };
-  bgVideoEl.oncanplay=()=>{ bgVideoEl.classList.add('show'); document.body.classList.add('hasbgvideo'); worldBg.visible=false; bgVideoEl.play().catch(()=>{}); };
-  bgVideoEl.src=src; bgVideoEl.load();
+  const tok=++fondoToken;
+  const quitar=()=>{ bgVideoEl.classList.remove('show'); bgVideoEl.removeAttribute('src'); document.body.classList.remove('hasbgvideo'); worldBg.visible=(TEMA!=='mar'); };
+  resolverVideo(VIDEO_FONDO[id]).then(url=>{
+    if(tok!==fondoToken) return;           // cambió de mundo mientras buscábamos
+    if(!url){ quitar(); pintarFondoMundo(TEMA); return; }
+    bgVideoEl.onerror=()=>{ if(tok!==fondoToken) return; quitar(); pintarFondoMundo(TEMA); };
+    bgVideoEl.oncanplay=()=>{ if(tok!==fondoToken) return; bgVideoEl.classList.add('show'); document.body.classList.add('hasbgvideo'); worldBg.visible=false; bgVideoEl.play().catch(()=>{}); };
+    bgVideoEl.src=url; bgVideoEl.load();
+  });
 }
 
 const movieEl=document.getElementById('movie'), movieVideo=document.getElementById('movieVideo');
-let peliculaLista=false;
+let peliculaURL=null;
 function comprobarPelicula(id){
-  peliculaLista=false; const bm=document.getElementById('btnMovie'); if(bm) bm.disabled=true;
-  const src=VIDEO_PELICULA[id]; if(!src) return;
-  // ¿el archivo está subido? Si responde, activamos el botón.
-  fetch(src,{method:'HEAD'}).then(r=>{ if(r.ok && id===MUNDO_ID){ peliculaLista=true; if(bm){ bm.disabled=false; bm.title='Ver la película'; } } })
-    .catch(()=>{});
+  peliculaURL=null; const bm=document.getElementById('btnMovie'); if(bm) bm.disabled=true;
+  resolverVideo(VIDEO_PELICULA[id]).then(url=>{
+    if(id!==MUNDO_ID) return;
+    peliculaURL=url; if(bm){ bm.disabled=!url; bm.title=url?'Ver la película':'(sube la película de este mundo para activarla)'; }
+  });
 }
 function abrirPelicula(){
-  const src=VIDEO_PELICULA[MUNDO_ID]; if(!src || !peliculaLista) return;
-  movieVideo.src=src; movieEl.classList.add('show');
+  if(!peliculaURL) return;
+  movieVideo.src=peliculaURL; movieEl.classList.add('show');
   try{ synth&&synth.cancel(); }catch(e){}
   movieVideo.currentTime=0; movieVideo.play().catch(()=>{});
 }
