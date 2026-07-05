@@ -96,6 +96,22 @@
 
   @media (prefers-reduced-motion: reduce){ .ray{animation:none} }
 
+  /* Fondo en video (detrás del acuario) */
+  #bgVideo{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;display:none;pointer-events:none}
+  #bgVideo.show{display:block}
+  body.hasbgvideo{background:#02141f}
+
+  /* Reproductor de película */
+  .movie{position:fixed;inset:0;z-index:80;background:#000;display:none;flex-direction:column;align-items:center;justify-content:center}
+  .movie.show{display:flex}
+  .movie video{width:100%;height:100%;object-fit:contain;background:#000}
+  .movie .mclose{position:fixed;top:18px;right:18px;z-index:81;font-family:"Fredoka";font-weight:600;font-size:16px;
+    border:none;cursor:pointer;border-radius:14px;padding:12px 18px;background:linear-gradient(135deg,#ff7a59,#e8542e);color:#fff;
+    box-shadow:0 10px 28px rgba(0,0,0,.5)}
+  .movie .mclose:active{transform:scale(.94)}
+  .btn.movie-btn{background:linear-gradient(135deg,#ffd36b,#f5a623);color:#3a2400}
+  .btn.movie-btn[disabled]{opacity:.4;cursor:not-allowed}
+
   /* Botón cine + overlay */
   .btn.cine{background:linear-gradient(135deg,#ff9a6b,#ff6b35);color:#2a0e02}
   .cinema{position:fixed;inset:0;z-index:30;display:none;flex-direction:column;justify-content:flex-end;align-items:center;pointer-events:none}
@@ -153,7 +169,14 @@
     <div class="ray"></div><div class="ray"></div><div class="ray"></div><div class="ray"></div>
   </div>
 
+  <video id="bgVideo" muted loop playsinline preload="auto"></video>
+
   <div id="stage"></div>
+
+  <div class="movie" id="movie">
+    <video id="movieVideo" playsinline controls></video>
+    <button class="mclose" id="movieClose">✕ Salir</button>
+  </div>
 
   <div id="worldPicker">
     <div class="wp-inner">
@@ -186,6 +209,10 @@
     <button class="btn cine" id="btnCine">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5v14l11-7z"/></svg>
       Cine
+    </button>
+    <button class="btn movie-btn" id="btnMovie">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 9h18M7 5v4M17 5v4M7 19v-4M17 19v-4"/></svg>
+      Película
     </button>
     <button class="btn ghost" id="btnClear">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>
@@ -376,7 +403,7 @@ for(let i=0;i<(reduceMotion?8:22);i++) spawnBubble(Math.random()*H());
 function onResize(){
   depthSprite.width=W(); depthSprite.height=H();
   plants.forEach(p=>p.y=H()+10);
-  try{ if(TEMA && TEMA!=='mar'){ pintarFondoMundo(TEMA); buildScape(); } }catch(e){}
+  try{ if(TEMA && TEMA!=='mar'){ pintarFondoMundo(TEMA); buildScape(); if(document.getElementById('bgVideo').classList.contains('show')) worldBg.visible=false; } }catch(e){}
 }
 app.renderer.on('resize', onResize); onResize();
 
@@ -1221,6 +1248,46 @@ const MUNDOS={
   parque:{ nombre:'El Parque', emoji:'🌳', sub:'Próximamente', listo:false },
 };
 let MUNDO_ID='acuario';
+
+/* ============================================================
+   VIDEOS por mundo  ·  fondo en bucle  +  película completa
+   Solo tienes que subir los archivos con estos nombres exactos
+   al repositorio. Los que no existan se ignoran solitos.
+   ============================================================ */
+const VIDEO_FONDO   = { acuario:'fondo-mar.mp4',      espacio:'fondo-espacio.mp4',    oeste:'fondo-oeste.mp4'    };
+const VIDEO_PELICULA= { acuario:'pelicula-mar.mp4',   espacio:'pelicula-espacio.mp4', oeste:'pelicula-oeste.mp4' };
+
+const bgVideoEl=document.getElementById('bgVideo');
+function setFondoVideo(id){
+  const src=VIDEO_FONDO[id];
+  if(!src){ bgVideoEl.classList.remove('show'); bgVideoEl.removeAttribute('src'); document.body.classList.remove('hasbgvideo'); worldBg.visible=(TEMA!=='mar'); return; }
+  // hay video de fondo: probamos cargarlo; si falla, volvemos al fondo dibujado
+  bgVideoEl.onerror=()=>{ bgVideoEl.classList.remove('show'); document.body.classList.remove('hasbgvideo'); worldBg.visible=(TEMA!=='mar'); pintarFondoMundo(TEMA); };
+  bgVideoEl.oncanplay=()=>{ bgVideoEl.classList.add('show'); document.body.classList.add('hasbgvideo'); worldBg.visible=false; bgVideoEl.play().catch(()=>{}); };
+  bgVideoEl.src=src; bgVideoEl.load();
+}
+
+const movieEl=document.getElementById('movie'), movieVideo=document.getElementById('movieVideo');
+let peliculaLista=false;
+function comprobarPelicula(id){
+  peliculaLista=false; const bm=document.getElementById('btnMovie'); if(bm) bm.disabled=true;
+  const src=VIDEO_PELICULA[id]; if(!src) return;
+  // ¿el archivo está subido? Si responde, activamos el botón.
+  fetch(src,{method:'HEAD'}).then(r=>{ if(r.ok && id===MUNDO_ID){ peliculaLista=true; if(bm){ bm.disabled=false; bm.title='Ver la película'; } } })
+    .catch(()=>{});
+}
+function abrirPelicula(){
+  const src=VIDEO_PELICULA[MUNDO_ID]; if(!src || !peliculaLista) return;
+  movieVideo.src=src; movieEl.classList.add('show');
+  try{ synth&&synth.cancel(); }catch(e){}
+  movieVideo.currentTime=0; movieVideo.play().catch(()=>{});
+}
+function cerrarPelicula(){ movieEl.classList.remove('show'); try{ movieVideo.pause(); }catch(e){} movieVideo.removeAttribute('src'); movieVideo.load(); }
+document.getElementById('btnMovie').onclick=abrirPelicula;
+document.getElementById('movieClose').onclick=cerrarPelicula;
+movieVideo.addEventListener('ended', cerrarPelicula);
+document.addEventListener('keydown',e=>{ if(e.key==='Escape' && movieEl.classList.contains('show')) cerrarPelicula(); });
+
 function setPearlColor(c){ cinePearl.children.forEach(ch=>{ ch.tint=c; }); }
 function cargarMundo(id){
   const m=MUNDOS[id]; if(!m||!m.listo) return;
@@ -1236,6 +1303,8 @@ function cargarMundo(id){
   depthLayer.visible=!noMar; bubbleLayer.visible=!noMar; plantLayer.visible=!noMar; planktonLayer.visible=!noMar; farLayer.visible=!noMar;
   ACCENT=m.pearl||0x2ee6cf;
   pintarFondoMundo(m.tema);
+  setFondoVideo(id);
+  comprobarPelicula(id);
   buildScape();
   preloadCine();
 }
